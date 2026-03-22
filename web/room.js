@@ -567,56 +567,36 @@ document.getElementById('settingsModal').addEventListener('click', function(e) {
         closeSettings();
     }
 });
-// ==================== ВИРТУАЛЬНЫЙ ФОН С BODYPIX ====================
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeSettings();
+    }
+});
+
+// ==================== ВИРТУАЛЬНЫЙ ФОН ====================
 
 var virtualBackground = 'none';
 var backgroundCanvas = null;
 var bgCtx = null;
 var backgroundImage = null;
 var segmentationInterval = null;
-var bodyPixModel = null;
-var bgVideoElement = null;
-
-// Предустановленные фоны
-var presetBackgrounds = {
-    office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1280&h=720&fit=crop',
-    nature: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280&h=720&fit=crop',
-    space: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1280&h=720&fit=crop',
-    books: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1280&h=720&fit=crop'
-};
-
-// Загружаем модель BodyPix
-async function loadBodyPixModel() {
-    if (!bodyPixModel) {
-        addChatMessage('Система', 'Загрузка модели виртуального фона...', true);
-        try {
-            bodyPixModel = await bodyPix.load({
-                architecture: 'MobileNetV1',
-                outputStride: 16,
-                multiplier: 0.5,
-                quantBytes: 2
-            });
-            addChatMessage('Система', 'Модель загружена', true);
-        } catch (err) {
-            console.error('BodyPix load error:', err);
-            addChatMessage('Система', 'Ошибка загрузки модели', true);
-        }
-    }
-    return bodyPixModel;
-}
 
 // Загружаем сохранённый фон
 function loadVirtualBackground() {
     var saved = localStorage.getItem('meetifyVirtualBg');
     if (saved) {
         virtualBackground = saved;
-        var select = document.getElementById('virtualBackground');
-        if (select) select.value = saved;
+        document.getElementById('virtualBackground').value = saved;
+        if (saved !== 'none') {
+            applyVirtualBackground(saved);
+        }
     }
 }
 
 // Обработчик изменения фона
-document.getElementById('virtualBackground').addEventListener('change', async function(e) {
+document.getElementById('virtualBackground').addEventListener('change', function(e) {
     var value = e.target.value;
     virtualBackground = value;
     localStorage.setItem('meetifyVirtualBg', value);
@@ -625,16 +605,7 @@ document.getElementById('virtualBackground').addEventListener('change', async fu
         document.getElementById('customBgFile').style.display = 'block';
     } else {
         document.getElementById('customBgFile').style.display = 'none';
-        if (value !== 'none' && presetBackgrounds[value]) {
-            backgroundImage = new Image();
-            backgroundImage.crossOrigin = 'anonymous';
-            backgroundImage.onload = function() {
-                applyVirtualBackground(value);
-            };
-            backgroundImage.src = presetBackgrounds[value];
-        } else {
-            applyVirtualBackground(value);
-        }
+        applyVirtualBackground(value);
     }
 });
 
@@ -654,7 +625,7 @@ document.getElementById('customBgFile').addEventListener('change', function(e) {
     }
 });
 
-// Применение виртуального фона
+// Применение виртуального фона с сегментацией
 async function applyVirtualBackground(type) {
     if (!localStream) {
         alert('Сначала включите камеру');
@@ -666,126 +637,123 @@ async function applyVirtualBackground(type) {
         segmentationInterval = null;
     }
     
-
-
-// Применение виртуального фона с реальной сегментацией
-async function applyVirtualBackground(type) {
-    if (!localStream) {
-        alert('Сначала включите камеру');
-        return;
-    }
-
-    if (segmentationInterval) {
-        clearInterval(segmentationInterval);
-        segmentationInterval = null;
-    }
-
     var localVideo = document.getElementById('video-local');
     if (!localVideo) return;
-
+    
     if (type === 'none') {
         localVideo.style.filter = 'none';
         localVideo.srcObject = localStream;
         addChatMessage('Система', 'Виртуальный фон отключён', true);
         return;
     }
-
-    // CSS blur fallback
-    if (type === 'blur') {
-        localVideo.style.filter = 'blur(12px)';
-        addChatMessage('Система', 'Размытие включено (весь кадр)', true);
-        return;
-    }
-
-    // BodyPix сегментация для фонов с картинками
+    
+    // Загружаем BodyPix
+    addChatMessage('Система', 'Загрузка модели сегментации...', true);
+    
     try {
-        await loadBodyPixModel();
-        if (!bodyPixModel) throw new Error('Model not loaded');
-
+        if (!window.bodyPix) {
+            addChatMessage('Система', 'Ошибка: библиотека не загружена', true);
+            localVideo.style.filter = 'blur(8px)';
+            return;
+        }
+        
+        const model = await bodyPix.load({
+            architecture: 'MobileNetV1',
+            outputStride: 16,
+            multiplier: 0.5,
+            quantBytes: 2
+        });
+        
+        addChatMessage('Система', 'Модель загружена, запуск сегментации...', true);
+        
+        // Создаём canvas
         if (!backgroundCanvas) {
             backgroundCanvas = document.createElement('canvas');
             backgroundCanvas.width = 640;
             backgroundCanvas.height = 480;
             bgCtx = backgroundCanvas.getContext('2d');
         }
-
-        if (!bgVideoElement) {
-            bgVideoElement = document.createElement('video');
-            bgVideoElement.srcObject = localStream;
-            bgVideoElement.muted = true;
-            bgVideoElement.play();
-        }
-
-        if (bgVideoElement.readyState < 2) {
-            await new Promise(function(resolve) {
-                bgVideoElement.onloadeddata = resolve;
+        
+        // Видео элемент для обработки
+        const video = document.createElement('video');
+        video.srcObject = localStream;
+        video.play();
+        
+        // Ждём готовности видео
+        await new Promise(resolve => {
+            video.onloadeddata = resolve;
+        });
+        
+        // Функция обработки кадра
+        async function processFrame() {
+            if (!video.videoWidth) return;
+            
+            // Сегментация
+            const segmentation = await model.segmentPerson(video, {
+                internalResolution: 'low',
+                segmentationThreshold: 0.7
             });
-        }
-
-        addChatMessage('Система', 'Обработка фона...', true);
-
-        segmentationInterval = setInterval(async function() {
-            if (!bgVideoElement || bgVideoElement.paused) return;
-
-            try {
-                var segmentation = await bodyPixModel.segmentPerson(bgVideoElement, {
-                    internalResolution: 'low',
-                    segmentationThreshold: 0.7
-                });
-
-                // Рисуем фон
-                bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-
-                if (backgroundImage) {
-                    bgCtx.drawImage(backgroundImage, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                } else {
-                    bgCtx.filter = 'blur(15px)';
-                    bgCtx.drawImage(bgVideoElement, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                    bgCtx.filter = 'none';
-                }
-
-                // Получаем данные
-                var bgData = bgCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-
-                // Создаём временный canvas для видео
-                var tempCanvas = document.createElement('canvas');
-                tempCanvas.width = backgroundCanvas.width;
-                tempCanvas.height = backgroundCanvas.height;
-                var tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(bgVideoElement, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                var videoData = tempCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-
-                // Применяем маску: человек = видео, фон = картинка/размытие
-                for (var i = 0; i < segmentation.data.length; i++) {
-                    var idx = i * 4;
-                    if (segmentation.data[i] === 1) {
-                        // Человек - берём из видео
-                        bgData.data[idx] = videoData.data[idx];
-                        bgData.data[idx + 1] = videoData.data[idx + 1];
-                        bgData.data[idx + 2] = videoData.data[idx + 2];
-                        bgData.data[idx + 3] = videoData.data[idx + 3];
-                    }
-                }
-
-                bgCtx.putImageData(bgData, 0, 0);
-
-                // Обновляем видео
-                if (backgroundCanvas.captureStream) {
-                    var stream = backgroundCanvas.captureStream(30);
-                    localStream.getAudioTracks().forEach(function(t) { stream.addTrack(t); });
-                    localVideo.srcObject = stream;
-                }
-            } catch (e) {
-                console.error('Frame error:', e);
+            
+            // Рисуем фон
+            if (type === 'blur') {
+                // Размытый фон
+                bgCtx.filter = 'blur(20px)';
+                bgCtx.drawImage(video, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+                bgCtx.filter = 'none';
+            } else if (backgroundImage) {
+                // Картинка как фон
+                bgCtx.drawImage(backgroundImage, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            } else {
+                // Размытое видео как фон
+                bgCtx.filter = 'blur(15px)';
+                bgCtx.drawImage(video, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+                bgCtx.filter = 'none';
             }
-        }, 150);
-
-        addChatMessage('Система', 'Фон применён: ' + type, true);
-
+            
+            // Получаем данные фона
+            const bgData = bgCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            
+            // Создаём временный canvas для видео
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = backgroundCanvas.width;
+            tempCanvas.height = backgroundCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(video, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            const videoData = tempCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+            
+            // Применяем маску: человек = видео, фон = картинка/размытие
+            for (let i = 0; i < segmentation.data.length; i++) {
+                const idx = i * 4;
+                if (segmentation.data[i] === 1) {
+                    // Человек - берём из видео
+                    bgData.data[idx] = videoData.data[idx];
+                    bgData.data[idx + 1] = videoData.data[idx + 1];
+                    bgData.data[idx + 2] = videoData.data[idx + 2];
+                    bgData.data[idx + 3] = videoData.data[idx + 3];
+                }
+            }
+            
+            bgCtx.putImageData(bgData, 0, 0);
+            
+            // Обновляем видео элемент
+            if (backgroundCanvas.captureStream) {
+                const processedStream = backgroundCanvas.captureStream(30);
+                localStream.getAudioTracks().forEach(track => {
+                    processedStream.addTrack(track);
+                });
+                localVideo.srcObject = processedStream;
+            }
+        }
+        
+        // Запускаем обработку
+        segmentationInterval = setInterval(processFrame, 100);
+        
+        addChatMessage('Система', 'Виртуальный фон активен: ' + type, true);
+        
     } catch (err) {
-        console.error('BG error:', err);
+        console.error('Virtual background error:', err);
         localVideo.style.filter = 'blur(8px)';
-        addChatMessage('Система', 'Ошибка фона, используется размытие', true);
+        addChatMessage('Система', 'Ошибка сегментации, используется размытие', true);
     }
 }
 
