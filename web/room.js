@@ -642,6 +642,11 @@ async function applyVirtualBackground(type) {
     
     if (type === 'none') {
         localVideo.style.filter = 'none';
+        // Очищаем canvas stream
+        if (localVideo._canvasStream) {
+            localVideo._canvasStream.getTracks().forEach(track => track.stop());
+            localVideo._canvasStream = null;
+        }
         localVideo.srcObject = localStream;
         addChatMessage('Система', 'Виртуальный фон отключён', true);
         return;
@@ -735,13 +740,17 @@ async function applyVirtualBackground(type) {
             
             bgCtx.putImageData(bgData, 0, 0);
             
-            // Обновляем видео элемент
-            if (backgroundCanvas.captureStream) {
-                const processedStream = backgroundCanvas.captureStream(30);
-                localStream.getAudioTracks().forEach(track => {
-                    processedStream.addTrack(track);
-                });
-                localVideo.srcObject = processedStream;
+            // Обновляем видео элемент через canvas
+            if (!localVideo._canvasStream) {
+                // Создаём stream из canvas один раз
+                if (backgroundCanvas.captureStream) {
+                    localVideo._canvasStream = backgroundCanvas.captureStream(30);
+                    // Добавляем аудио
+                    localStream.getAudioTracks().forEach(track => {
+                        localVideo._canvasStream.addTrack(track);
+                    });
+                    localVideo.srcObject = localVideo._canvasStream;
+                }
             }
         }
         
@@ -752,6 +761,7 @@ async function applyVirtualBackground(type) {
         
     } catch (err) {
         console.error('Virtual background error:', err);
+        // Fallback к CSS
         localVideo.style.filter = 'blur(8px)';
         addChatMessage('Система', 'Ошибка сегментации, используется размытие', true);
     }
