@@ -3,6 +3,8 @@ var socket = io(window.location.origin);
 var localStream = null;
 var peerConnections = {};
 var currentRoomId = null;
+var isMicEnabled = true;
+var isCamEnabled = true;
 
 // TURN сервер конфигурация
 var configuration = {
@@ -55,6 +57,12 @@ async function joinRoom() {
         addVideoStream(localStream, 'local', true);
         updateStatus('Подключение к комнате...', 'connecting');
         
+        // Показываем контролы
+        var controls = document.getElementById('controls');
+        if (controls) {
+            controls.classList.remove('hidden');
+        }
+        
         // Только потом подключаемся к сокету
         socket.emit('join-room', roomId);
         
@@ -62,6 +70,85 @@ async function joinRoom() {
         console.error('Error accessing media devices:', err);
         updateStatus('Ошибка доступа к камере/микрофону. Разрешите доступ и попробуйте снова.', 'error');
     }
+}
+
+// Управление микрофоном
+function toggleMic() {
+    if (!localStream) return;
+    
+    var audioTracks = localStream.getAudioTracks();
+    if (audioTracks.length === 0) return;
+    
+    isMicEnabled = !isMicEnabled;
+    audioTracks.forEach(function(track) {
+        track.enabled = isMicEnabled;
+    });
+    
+    var micBtn = document.getElementById('micBtn');
+    if (micBtn) {
+        micBtn.textContent = isMicEnabled ? '🎤' : '🎤❌';
+        micBtn.classList.toggle('muted', !isMicEnabled);
+    }
+    
+    console.log('Microphone ' + (isMicEnabled ? 'enabled' : 'disabled'));
+}
+
+// Управление камерой
+function toggleCam() {
+    if (!localStream) return;
+    
+    var videoTracks = localStream.getVideoTracks();
+    if (videoTracks.length === 0) return;
+    
+    isCamEnabled = !isCamEnabled;
+    videoTracks.forEach(function(track) {
+        track.enabled = isCamEnabled;
+    });
+    
+    var camBtn = document.getElementById('camBtn');
+    if (camBtn) {
+        camBtn.textContent = isCamEnabled ? '📹' : '📹❌';
+        camBtn.classList.toggle('muted', !isCamEnabled);
+    }
+    
+    console.log('Camera ' + (isCamEnabled ? 'enabled' : 'disabled'));
+}
+
+// Выход из комнаты
+function leaveRoom() {
+    if (localStream) {
+        localStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        localStream = null;
+    }
+    
+    // Закрываем все peer connections
+    Object.keys(peerConnections).forEach(function(userId) {
+        peerConnections[userId].close();
+    });
+    peerConnections = {};
+    
+    // Очищаем видео
+    var videosContainer = document.getElementById('videos');
+    if (videosContainer) {
+        videosContainer.innerHTML = '';
+    }
+    
+    // Скрываем чат и контролы
+    var chatSection = document.getElementById('chatSection');
+    var controls = document.getElementById('controls');
+    if (chatSection) chatSection.classList.add('hidden');
+    if (controls) controls.classList.add('hidden');
+    
+    // Отключаемся от комнаты
+    if (currentRoomId) {
+        socket.emit('leave-room', currentRoomId);
+    }
+    currentRoomId = null;
+    
+    updateStatus('Не подключено', '');
+    document.getElementById('roomId').value = '';
 }
 
 function addVideoStream(stream, userId, isLocal) {
