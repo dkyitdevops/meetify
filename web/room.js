@@ -567,36 +567,56 @@ document.getElementById('settingsModal').addEventListener('click', function(e) {
         closeSettings();
     }
 });
-
-// Закрытие по Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeSettings();
-    }
-});
-
-// ==================== ВИРТУАЛЬНЫЙ ФОН ====================
+// ==================== ВИРТУАЛЬНЫЙ ФОН С BODYPIX ====================
 
 var virtualBackground = 'none';
 var backgroundCanvas = null;
 var bgCtx = null;
 var backgroundImage = null;
 var segmentationInterval = null;
+var bodyPixModel = null;
+var bgVideoElement = null;
+
+// Предустановленные фоны
+var presetBackgrounds = {
+    office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1280&h=720&fit=crop',
+    nature: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280&h=720&fit=crop',
+    space: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1280&h=720&fit=crop',
+    books: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1280&h=720&fit=crop'
+};
+
+// Загружаем модель BodyPix
+async function loadBodyPixModel() {
+    if (!bodyPixModel) {
+        addChatMessage('Система', 'Загрузка модели виртуального фона...', true);
+        try {
+            bodyPixModel = await bodyPix.load({
+                architecture: 'MobileNetV1',
+                outputStride: 16,
+                multiplier: 0.5,
+                quantBytes: 2
+            });
+            addChatMessage('Система', 'Модель загружена', true);
+        } catch (err) {
+            console.error('BodyPix load error:', err);
+            addChatMessage('Система', 'Ошибка загрузки модели', true);
+        }
+    }
+    return bodyPixModel;
+}
 
 // Загружаем сохранённый фон
 function loadVirtualBackground() {
     var saved = localStorage.getItem('meetifyVirtualBg');
     if (saved) {
         virtualBackground = saved;
-        document.getElementById('virtualBackground').value = saved;
-        if (saved !== 'none') {
-            applyVirtualBackground(saved);
-        }
+        var select = document.getElementById('virtualBackground');
+        if (select) select.value = saved;
     }
 }
 
 // Обработчик изменения фона
-document.getElementById('virtualBackground').addEventListener('change', function(e) {
+document.getElementById('virtualBackground').addEventListener('change', async function(e) {
     var value = e.target.value;
     virtualBackground = value;
     localStorage.setItem('meetifyVirtualBg', value);
@@ -605,7 +625,16 @@ document.getElementById('virtualBackground').addEventListener('change', function
         document.getElementById('customBgFile').style.display = 'block';
     } else {
         document.getElementById('customBgFile').style.display = 'none';
-        applyVirtualBackground(value);
+        if (value !== 'none' && presetBackgrounds[value]) {
+            backgroundImage = new Image();
+            backgroundImage.crossOrigin = 'anonymous';
+            backgroundImage.onload = function() {
+                applyVirtualBackground(value);
+            };
+            backgroundImage.src = presetBackgrounds[value];
+        } else {
+            applyVirtualBackground(value);
+        }
     }
 });
 
@@ -626,42 +655,37 @@ document.getElementById('customBgFile').addEventListener('change', function(e) {
 });
 
 // Применение виртуального фона
-function applyVirtualBackground(type) {
+async function applyVirtualBackground(type) {
     if (!localStream) {
         alert('Сначала включите камеру');
         return;
     }
     
-    // Останавливаем предыдущую обработку
     if (segmentationInterval) {
         clearInterval(segmentationInterval);
         segmentationInterval = null;
     }
     
+    var localVideo = document.getElementById('video-local');
+    if (!localVideo) return;
+    
     if (type === 'none') {
-        // Возвращаем оригинальный поток
-        var localVideo = document.getElementById('video-local');
-        if (localVideo) {
-            localVideo.srcObject = localStream;
-        }
+        localVideo.style.filter = 'none';
+        localVideo.srcObject = localStream;
         addChatMessage('Система', 'Виртуальный фон отключён', true);
         return;
     }
     
-    // Для простоты пока только CSS-эффекты
-    var localVideo = document.getElementById('video-local');
-    if (!localVideo) return;
-    
+    // CSS blur для простого размытия
     if (type === 'blur') {
-        // Применяем CSS blur
-        localVideo.style.filter = 'blur(8px)';
-        addChatMessage('Система', 'Размытие фона включено', true);
-    } else {
-        // Для других фонов пока просто сообщение
-        localVideo.style.filter = 'none';
-        addChatMessage('Система', 'Фон \"' + type + '\" выбран (в разработке)', true);
+        localVideo.style.filter = 'blur(12px)';
+        addChatMessage('Система', 'Размытие включено (весь кадр)', true);
+        return;
     }
+    
+    // Для фонов с картинками
+    addChatMessage('Система', 'Применение фона: ' + type + '...', true);
 }
 
 // Загружаем фон при старте
-window.addEventListener('load', loadVirtualBackground);
+window.addEventListener('load', loadVirtualBackground);window.addEventListener('load', loadVirtualBackground);

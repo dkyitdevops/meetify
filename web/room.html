@@ -472,12 +472,17 @@
                     <label>🎨 Виртуальный фон</label>
                     <select id="virtualBackground" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(102, 126, 234, 0.3);">
                         <option value="none" selected>Без фона</option>
-                        <option value="blur">Размытие</option>
-                        <option value="office">Офис</option>
-                        <option value="nature">Природа</option>
-                        <option value="custom">Своя картинка</option>
+                        <option value="blur">🔮 Размытие</option>
+                        <option value="office">🏢 Офис</option>
+                        <option value="nature">🌿 Природа</option>
+                        <option value="space">🚀 Космос</option>
+                        <option value="books">📚 Библиотека</option>
+                        <option value="custom">🖼️ Своя картинка</option>
                     </select>
                     <input type="file" id="customBgFile" accept="image/*" style="display: none; margin-top: 10px;">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Для фонов с картинками требуется загрузка модели (~10 сек)
+                    </small>
                 </div>
                 
                 <div class="setting-item">
@@ -506,6 +511,8 @@
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/room.js"></script>
 </body>
