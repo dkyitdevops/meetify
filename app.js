@@ -1,5 +1,5 @@
 const socket = io(window.location.origin);
-let localStream;
+let localStream = null;
 let peerConnections = {};
 
 // TURN сервер конфигурация
@@ -76,6 +76,11 @@ function addVideoStream(stream, userId, isLocal = false) {
 socket.on('user-joined', async (userId) => {
     console.log('User joined:', userId);
     
+    if (!localStream) {
+        console.log('Local stream not ready yet, skipping');
+        return;
+    }
+    
     const pc = new RTCPeerConnection(configuration);
     peerConnections[userId] = pc;
     
@@ -108,6 +113,11 @@ socket.on('user-joined', async (userId) => {
 });
 
 socket.on('offer', async (data) => {
+    if (!localStream) {
+        console.log('Local stream not ready for offer');
+        return;
+    }
+    
     const pc = new RTCPeerConnection(configuration);
     peerConnections[data.from] = pc;
     
