@@ -522,3 +522,55 @@ function saveRecording() {
     URL.revokeObjectURL(url);
     recordedChunks = [];
 }
+
+// ==================== НАСТРОЙКИ ====================
+
+// Загружаем настройки при старте
+var settings = {
+    downloadPath: '',
+    videoQuality: 'medium'
+};
+
+function loadSettings() {
+    var saved = localStorage.getItem('meetifySettings');
+    if (saved) {
+        settings = JSON.parse(saved);
+        document.getElementById('downloadPath').value = settings.downloadPath || '';
+        document.getElementById('videoQuality').value = settings.videoQuality || 'medium';
+    }
+}
+
+// Вызываем загрузку настроек
+window.addEventListener('load', loadSettings);
+
+function openSettings() {
+    document.getElementById('settingsModal').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').classList.remove('active');
+}
+
+function saveSettings() {
+    settings.downloadPath = document.getElementById('downloadPath').value.trim();
+    settings.videoQuality = document.getElementById('videoQuality').value;
+    
+    localStorage.setItem('meetifySettings', JSON.stringify(settings));
+    
+    addChatMessage('Система', 'Настройки сохранены', true);
+    closeSettings();
+}
+
+// Закрытие по клику вне модалки
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSettings();
+    }
+});
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeSettings();
+    }
+});
