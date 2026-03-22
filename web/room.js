@@ -644,100 +644,23 @@ function applyVirtualBackground(type) {
         if (localVideo) {
             localVideo.srcObject = localStream;
         }
+        addChatMessage('Система', 'Виртуальный фон отключён', true);
         return;
     }
     
-    // Создаём canvas для обработки
-    if (!backgroundCanvas) {
-        backgroundCanvas = document.createElement('canvas');
-        backgroundCanvas.width = 640;
-        backgroundCanvas.height = 480;
-        bgCtx = backgroundCanvas.getContext('2d');
+    // Для простоты пока только CSS-эффекты
+    var localVideo = document.getElementById('video-local');
+    if (!localVideo) return;
+    
+    if (type === 'blur') {
+        // Применяем CSS blur
+        localVideo.style.filter = 'blur(8px)';
+        addChatMessage('Система', 'Размытие фона включено', true);
+    } else {
+        // Для других фонов пока просто сообщение
+        localVideo.style.filter = 'none';
+        addChatMessage('Система', 'Фон \"' + type + '\" выбран (в разработке)', true);
     }
-    
-    var videoTrack = localStream.getVideoTracks()[0];
-    var videoElement = document.createElement('video');
-    videoElement.srcObject = new MediaStream([videoTrack]);
-    videoElement.play();
-    
-    // Обработка кадров
-    segmentationInterval = setInterval(function() {
-        if (videoElement.readyState < 2) return;
-        
-        // Рисуем видео
-        bgCtx.drawImage(videoElement, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-        
-        if (type === 'blur') {
-            // Применяем размытие по краям (упрощённая версия)
-            applyBlurEffect();
-        } else if (backgroundImage && (type === 'custom' || type === 'office' || type === 'nature')) {
-            // Накладываем фоновое изображение
-            applyBackgroundImage();
-        }
-        
-        // Обновляем видео элемент
-        var localVideo = document.getElementById('video-local');
-        if (localVideo && backgroundCanvas.captureStream) {
-            var processedStream = backgroundCanvas.captureStream(30);
-            // Добавляем аудио
-            localStream.getAudioTracks().forEach(function(track) {
-                processedStream.addTrack(track);
-            });
-            localVideo.srcObject = processedStream;
-        }
-    }, 1000 / 30);
-    
-    addChatMessage('Система', 'Виртуальный фон применён', true);
-}
-
-// Упрощённое размытие
-function applyBlurEffect() {
-    var imageData = bgCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-    var data = imageData.data;
-    
-    // Простое размытие по краям (эффект vignette + blur)
-    var centerX = backgroundCanvas.width / 2;
-    var centerY = backgroundCanvas.height / 2;
-    var maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
-    
-    for (var y = 0; y < backgroundCanvas.height; y += 4) {
-        for (var x = 0; x < backgroundCanvas.width; x += 4) {
-            var dx = x - centerX;
-            var dy = y - centerY;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            var blurAmount = (dist / maxDist) * 0.8;
-            
-            if (blurAmount > 0.3) {
-                var idx = (y * backgroundCanvas.width + x) * 4;
-                // Упрощённое размытие — затемнение краёв
-                data[idx] *= (1 - blurAmount * 0.3);
-                data[idx + 1] *= (1 - blurAmount * 0.3);
-                data[idx + 2] *= (1 - blurAmount * 0.3);
-            }
-        }
-    }
-    
-    bgCtx.putImageData(imageData, 0, 0);
-}
-
-// Наложение фонового изображения
-function applyBackgroundImage() {
-    if (!backgroundImage) return;
-    
-    // Сохраняем текущее видео
-    var tempCanvas = document.createElement('canvas');
-    tempCanvas.width = backgroundCanvas.width;
-    tempCanvas.height = backgroundCanvas.height;
-    var tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(backgroundCanvas, 0, 0);
-    
-    // Рисуем фон
-    bgCtx.drawImage(backgroundImage, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-    
-    // Накладываем видео с прозрачностью по центру
-    bgCtx.globalAlpha = 0.9;
-    bgCtx.drawImage(tempCanvas, 0, 0);
-    bgCtx.globalAlpha = 1.0;
 }
 
 // Загружаем фон при старте
