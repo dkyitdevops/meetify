@@ -1,11 +1,25 @@
-const socket = io();
-let localStream;
+const socket = io(window.location.origin);
+let localStream = null;
 let peerConnections = {};
+let currentRoomId = null;
+
+// TURN сервер конфигурация
 const configuration = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-    ]
+        { urls: 'stun:stun1.l.google.com:19302' },
+        {
+            urls: 'turn:46.149.68.9:3478',
+            username: 'meetify',
+            credential: 'meetifySecret2024'
+        },
+        {
+            urls: 'turns:46.149.68.9:5349',
+            username: 'meetify',
+            credential: 'meetifySecret2024'
+        }
+    ],
+    iceCandidatePoolSize: 10
 };
 
 function updateStatus(text, type) {
@@ -27,20 +41,25 @@ async function joinRoom() {
         return;
     }
     
-    updateStatus('Подключение...', 'connecting');
+    currentRoomId = roomId;
+    updateStatus('Запрос доступа к камере...', 'connecting');
     
     try {
+        // Сначала получаем доступ к медиа
         localStream = await navigator.mediaDevices.getUserMedia({ 
             video: true, 
             audio: true 
         });
         
         addVideoStream(localStream, 'local', true);
+        updateStatus('Подключение к комнате...', 'connecting');
+        
+        // Только потом подключаемся к сокету
         socket.emit('join-room', roomId);
-        updateStatus('Подключено к комнате: ' + roomId, 'connected');
+        
     } catch (err) {
         console.error('Error accessing media devices:', err);
-        updateStatus('Ошибка доступа к камере/микрофону', 'error');
+        updateStatus('Ошибка доступа к камере/микрофону. Разрешите доступ и попробуйте снова.', 'error');
     }
 }
 
@@ -60,83 +79,128 @@ function addVideoStream(stream, userId, isLocal = false) {
     video.srcObject = stream;
 }
 
+// Обработчики Socket.io
+socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+    updateStatus('Сервер подключен', 'connected');
+});
+
+socket.on('connect_error', (err) => {
+    console.error('Socket connection error:', err);
+    updateStatus('Ошибка подключения к серверу', 'error');
+});
+
+socket.on('joined-room', (roomId) => {
+    console.log('Joined room:', roomId);
+    updateStatus('Подключено к комнате: ' + roomId, 'connected');
+});
+
 socket.on('user-joined', async (userId) => {
     console.log('User joined:', userId);
     
-    const pc = new RTCPeerConnection(configuration);
-    peerConnections[userId] = pc;
+    if (!localStream) {
+        console.log('Local stream not ready yet, skipping');
+        return;
+    }
     
-    localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
-    });
-    
-    pc.ontrack = (event) => {
-        addVideoStream(event.streams[0], userId);
-    };
-    
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            socket.emit('ice-candidate', {
-                roomId: document.getElementById('roomId').value,
-                candidate: event.candidate,
-                to: userId
-            });
-        }
-    };
-    
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    
-    socket.emit('offer', {
-        roomId: document.getElementById('roomId').value,
-        offer: offer,
-        to: userId
-    });
+    try {
+        const pc = new RTCPeerConnection(configuration);
+        peerConnections[userId] = pc;
+        
+        localStream.getTracks().forEach(track => {
+            pc.addTrack(track, localStream);
+        });
+        
+        pc.ontrack = (event) => {
+            addVideoStream(event.streams[0], userId);
+        };
+        
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit('ice-candidate', {
+                    roomId: currentRoomId,
+                    candidate: event.candidate,
+                    to: userId
+                });
+            }
+        };
+        
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        
+        socket.emit('offer', {
+            roomId: currentRoomId,
+            offer: offer,
+            to: userId
+        });
+    } catch (err) {
+        console.error('Error in user-joined handler:', err);
+    }
 });
 
 socket.on('offer', async (data) => {
-    const pc = new RTCPeerConnection(configuration);
-    peerConnections[data.from] = pc;
+    console.log('Received offer from:', data.from);
     
-    localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
-    });
+    if (!localStream) {
+        console.log('Local stream not ready for offer');
+        return;
+    }
     
-    pc.ontrack = (event) => {
-        addVideoStream(event.streams[0], data.from);
-    };
-    
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            socket.emit('ice-candidate', {
-                roomId: document.getElementById('roomId').value,
-                candidate: event.candidate,
-                to: data.from
-            });
-        }
-    };
-    
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    
-    socket.emit('answer', {
-        roomId: document.getElementById('roomId').value,
-        answer: answer,
-        to: data.from
-    });
+    try {
+        const pc = new RTCPeerConnection(configuration);
+        peerConnections[data.from] = pc;
+        
+        localStream.getTracks().forEach(track => {
+            pc.addTrack(track, localStream);
+        });
+        
+        pc.ontrack = (event) => {
+            addVideoStream(event.streams[0], data.from);
+        };
+        
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit('ice-candidate', {
+                    roomId: currentRoomId,
+                    candidate: event.candidate,
+                    to: data.from
+                });
+            }
+        };
+        
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        
+        socket.emit('answer', {
+            roomId: currentRoomId,
+            answer: answer,
+            to: data.from
+        });
+    } catch (err) {
+        console.error('Error in offer handler:', err);
+    }
 });
 
 socket.on('answer', async (data) => {
+    console.log('Received answer from:', data.from);
     const pc = peerConnections[data.from];
     if (pc) {
-        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        } catch (err) {
+            console.error('Error setting remote description:', err);
+        }
     }
 });
 
 socket.on('ice-candidate', async (data) => {
     const pc = peerConnections[data.from];
     if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (err) {
+            console.error('Error adding ICE candidate:', err);
+        }
     }
 });
