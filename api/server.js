@@ -37,6 +37,17 @@ io.on('connection', (socket) => {
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-joined', socket.id);
+    socket.emit('joined-room', roomId);
+  });
+  
+  // Чат сообщения
+  socket.on('chat-message', (data) => {
+    // Рассылаем сообщение всем в комнате кроме отправителя
+    socket.to(data.roomId).emit('chat-message', {
+      text: data.text,
+      author: data.author || 'Гость',
+      timestamp: new Date().toISOString()
+    });
   });
   
   socket.on('offer', (data) => {

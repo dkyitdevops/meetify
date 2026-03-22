@@ -94,6 +94,78 @@ socket.on('connect_error', function(err) {
 socket.on('joined-room', function(roomId) {
     console.log('Joined room:', roomId);
     updateStatus('Подключено к комнате: ' + roomId, 'connected');
+    
+    // Показываем чат
+    var chatSection = document.getElementById('chatSection');
+    if (chatSection) {
+        chatSection.classList.remove('hidden');
+    }
+    
+    // Добавляем системное сообщение
+    addChatMessage('Система', 'Вы присоединились к комнате ' + roomId, true);
+});
+
+// Чат функции
+function addChatMessage(author, text, isSystem) {
+    var chatMessages = document.getElementById('chatMessages');
+    if (!chatMessages) return;
+    
+    var messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message';
+    
+    if (isSystem) {
+        messageDiv.style.fontStyle = 'italic';
+        messageDiv.style.color = '#888';
+    }
+    
+    var authorSpan = document.createElement('div');
+    authorSpan.className = 'author';
+    authorSpan.textContent = author;
+    
+    var textSpan = document.createElement('div');
+    textSpan.className = 'text';
+    textSpan.textContent = text;
+    
+    messageDiv.appendChild(authorSpan);
+    messageDiv.appendChild(textSpan);
+    chatMessages.appendChild(messageDiv);
+    
+    // Автопрокрутка вниз
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function sendMessage() {
+    var chatInput = document.getElementById('chatInput');
+    if (!chatInput) return;
+    
+    var text = chatInput.value.trim();
+    if (!text) return;
+    
+    if (!currentRoomId) {
+        alert('Сначала присоединитесь к комнате');
+        return;
+    }
+    
+    // Отправляем сообщение на сервер
+    socket.emit('chat-message', {
+        roomId: currentRoomId,
+        text: text,
+        author: 'Вы'
+    });
+    
+    // Добавляем своё сообщение в чат
+    addChatMessage('Вы', text, false);
+    
+    // Очищаем поле ввода
+    chatInput.value = '';
+}
+
+// Получение сообщений от других
+socket.on('chat-message', function(data) {
+    // Не показываем свои сообщения (уже показали при отправке)
+    if (data.author !== 'Вы') {
+        addChatMessage(data.author || 'Гость', data.text, false);
+    }
 });
 
 socket.on('user-joined', async function(userId) {
