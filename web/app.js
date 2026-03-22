@@ -1,10 +1,11 @@
-const socket = io(window.location.origin);
-let localStream = null;
-let peerConnections = {};
-let currentRoomId = null;
+// Глобальные переменные
+var socket = io(window.location.origin);
+var localStream = null;
+var peerConnections = {};
+var currentRoomId = null;
 
 // TURN сервер конфигурация
-const configuration = {
+var configuration = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
@@ -23,19 +24,19 @@ const configuration = {
 };
 
 function updateStatus(text, type) {
-    const status = document.getElementById('status');
+    var status = document.getElementById('status');
     status.textContent = text;
     status.className = 'status ' + type;
 }
 
 async function createRoom() {
-    const roomId = Math.random().toString(36).substring(7);
+    var roomId = Math.random().toString(36).substring(7);
     document.getElementById('roomId').value = roomId;
     await joinRoom();
 }
 
 async function joinRoom() {
-    const roomId = document.getElementById('roomId').value;
+    var roomId = document.getElementById('roomId').value;
     if (!roomId) {
         alert('Введите ID комнаты');
         return;
@@ -63,9 +64,9 @@ async function joinRoom() {
     }
 }
 
-function addVideoStream(stream, userId, isLocal = false) {
-    const videosContainer = document.getElementById('videos');
-    let video = document.getElementById('video-' + userId);
+function addVideoStream(stream, userId, isLocal) {
+    var videosContainer = document.getElementById('videos');
+    var video = document.getElementById('video-' + userId);
     
     if (!video) {
         video = document.createElement('video');
@@ -80,22 +81,22 @@ function addVideoStream(stream, userId, isLocal = false) {
 }
 
 // Обработчики Socket.io
-socket.on('connect', () => {
+socket.on('connect', function() {
     console.log('Socket connected:', socket.id);
     updateStatus('Сервер подключен', 'connected');
 });
 
-socket.on('connect_error', (err) => {
+socket.on('connect_error', function(err) {
     console.error('Socket connection error:', err);
     updateStatus('Ошибка подключения к серверу', 'error');
 });
 
-socket.on('joined-room', (roomId) => {
+socket.on('joined-room', function(roomId) {
     console.log('Joined room:', roomId);
     updateStatus('Подключено к комнате: ' + roomId, 'connected');
 });
 
-socket.on('user-joined', async (userId) => {
+socket.on('user-joined', async function(userId) {
     console.log('User joined:', userId);
     
     if (!localStream) {
@@ -104,18 +105,18 @@ socket.on('user-joined', async (userId) => {
     }
     
     try {
-        const pc = new RTCPeerConnection(configuration);
+        var pc = new RTCPeerConnection(configuration);
         peerConnections[userId] = pc;
         
-        localStream.getTracks().forEach(track => {
+        localStream.getTracks().forEach(function(track) {
             pc.addTrack(track, localStream);
         });
         
-        pc.ontrack = (event) => {
+        pc.ontrack = function(event) {
             addVideoStream(event.streams[0], userId);
         };
         
-        pc.onicecandidate = (event) => {
+        pc.onicecandidate = function(event) {
             if (event.candidate) {
                 socket.emit('ice-candidate', {
                     roomId: currentRoomId,
@@ -125,7 +126,7 @@ socket.on('user-joined', async (userId) => {
             }
         };
         
-        const offer = await pc.createOffer();
+        var offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         
         socket.emit('offer', {
@@ -138,7 +139,7 @@ socket.on('user-joined', async (userId) => {
     }
 });
 
-socket.on('offer', async (data) => {
+socket.on('offer', async function(data) {
     console.log('Received offer from:', data.from);
     
     if (!localStream) {
@@ -147,18 +148,18 @@ socket.on('offer', async (data) => {
     }
     
     try {
-        const pc = new RTCPeerConnection(configuration);
+        var pc = new RTCPeerConnection(configuration);
         peerConnections[data.from] = pc;
         
-        localStream.getTracks().forEach(track => {
+        localStream.getTracks().forEach(function(track) {
             pc.addTrack(track, localStream);
         });
         
-        pc.ontrack = (event) => {
+        pc.ontrack = function(event) {
             addVideoStream(event.streams[0], data.from);
         };
         
-        pc.onicecandidate = (event) => {
+        pc.onicecandidate = function(event) {
             if (event.candidate) {
                 socket.emit('ice-candidate', {
                     roomId: currentRoomId,
@@ -169,7 +170,7 @@ socket.on('offer', async (data) => {
         };
         
         await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await pc.createAnswer();
+        var answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         
         socket.emit('answer', {
@@ -182,9 +183,9 @@ socket.on('offer', async (data) => {
     }
 });
 
-socket.on('answer', async (data) => {
+socket.on('answer', async function(data) {
     console.log('Received answer from:', data.from);
-    const pc = peerConnections[data.from];
+    var pc = peerConnections[data.from];
     if (pc) {
         try {
             await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
@@ -194,8 +195,8 @@ socket.on('answer', async (data) => {
     }
 });
 
-socket.on('ice-candidate', async (data) => {
-    const pc = peerConnections[data.from];
+socket.on('ice-candidate', async function(data) {
+    var pc = peerConnections[data.from];
     if (pc) {
         try {
             await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
