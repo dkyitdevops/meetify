@@ -18,6 +18,9 @@ var peerConnections = {};
 var isMicEnabled = true;
 var isCamEnabled = true;
 var isScreenSharing = false;
+var isRecording = false;
+var mediaRecorder = null;
+var recordedChunks = [];
 
 // TURN сервер конфигурация
 var configuration = {
@@ -371,4 +374,121 @@ async function stopScreenShare() {
     }
     
     addChatMessage('Система', 'Демонстрация экрана остановлена', true);
+}
+
+// ==================== ЗАПИСЬ ВСТРЕЧИ ====================
+
+async function toggleRecording() {
+    var recordBtn = document.getElementById('recordBtn');
+    
+    if (isRecording) {
+        // Останавливаем запись
+        stopRecording();
+        recordBtn.textContent = '⏺️';
+        recordBtn.classList.remove('muted');
+        isRecording = false;
+    } else {
+        // Начинаем запись
+        try {
+            if (!localStream) {
+                alert('Сначала включите камеру');
+                return;
+            }
+            
+            recordedChunks = [];
+            
+            // Создаем Canvas для объединения видео
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            canvas.width = 1280;
+            canvas.height = 720;
+            
+            // Захватываем canvas как поток
+            var canvasStream = canvas.captureStream(30);
+            
+            // Добавляем аудио из localStream
+            localStream.getAudioTracks().forEach(function(track) {
+                canvasStream.addTrack(track);
+            });
+            
+            // Создаем MediaRecorder
+            mediaRecorder = new MediaRecorder(canvasStream, {
+                mimeType: 'video/webm;codecs=vp9,opus'
+            });
+            
+            mediaRecorder.ondataavailable = function(event) {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = function() {
+                saveRecording();
+            };
+            
+            // Рисуем видео на canvas
+            var localVideo = document.getElementById('video-local');
+            function drawFrame() {
+                if (!isRecording) return;
+                
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Рисуем локальное видео
+                if (localVideo && localVideo.readyState >= 2) {
+                    ctx.drawImage(localVideo, 0, 0, canvas.width / 2, canvas.height / 2);
+                }
+                
+                // Рисуем удаленные видео
+                var remoteVideos = document.querySelectorAll('video:not(#video-local)');
+                remoteVideos.forEach(function(video, index) {
+                    if (video.readyState >= 2) {
+                        var x = (index % 2) * (canvas.width / 2);
+                        var y = Math.floor(index / 2) * (canvas.height / 2) + (canvas.height / 2);
+                        ctx.drawImage(video, x, y, canvas.width / 2, canvas.height / 2);
+                    }
+                });
+                
+                requestAnimationFrame(drawFrame);
+            }
+            
+            mediaRecorder.start(1000); // Собираем данные каждую секунду
+            drawFrame();
+            
+            recordBtn.textContent = '⏹️';
+            recordBtn.classList.add('muted');
+            isRecording = true;
+            
+            addChatMessage('Система', 'Запись началась', true);
+            
+        } catch (err) {
+            console.error('Error starting recording:', err);
+            alert('Не удалось начать запись: ' + err.message);
+        }
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    isRecording = false;
+    addChatMessage('Система', 'Запись остановлена. Скачивание...', true);
+}
+
+function saveRecording() {
+    if (recordedChunks.length === 0) return;
+    
+    var blob = new Blob(recordedChunks, { type: 'video/webm' });
+    var url = URL.createObjectURL(blob);
+    
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'meetify-recording-' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.webm';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    URL.revokeObjectURL(url);
+    recordedChunks = [];
 }
