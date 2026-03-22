@@ -1,0 +1,51 @@
+services:
+  web:
+    image: docker.io/library/nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./web:/usr/share/nginx/html
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    image: docker.io/library/node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./api:/app
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/meetify
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    command: sh -c "npm install && npm start"
+    restart: unless-stopped
+
+  db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=meetify
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
