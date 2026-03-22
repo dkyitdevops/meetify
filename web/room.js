@@ -284,6 +284,24 @@ socket.on('chat-message', function(data) {
     }
 });
 
+// Оповещения о записи
+socket.on('recording-started', function(data) {
+    addChatMessage('Система', '🔴 ' + (data.by || 'Кто-то') + ' начал запись встречи', true);
+    showNotification('Запись началась', 'Встреча записывается');
+});
+
+socket.on('recording-stopped', function(data) {
+    addChatMessage('Система', '⏹️ Запись остановлена', true);
+    showNotification('Запись остановлена', 'Видео сохранено');
+});
+
+// Всплывающее уведомление
+function showNotification(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body: body });
+    }
+}
+
 // ==================== ДЕМОНСТРАЦИЯ ЭКРАНА ====================
 
 async function toggleScreenShare() {
@@ -459,7 +477,15 @@ async function toggleRecording() {
             recordBtn.classList.add('muted');
             isRecording = true;
             
-            addChatMessage('Система', 'Запись началась', true);
+            // Отправляем оповещение всем
+            socket.emit('recording-started', { roomId: roomId });
+            
+            // Запрашиваем разрешение на уведомления
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            
+            addChatMessage('Система', '🔴 Запись началась', true);
             
         } catch (err) {
             console.error('Error starting recording:', err);
@@ -473,7 +499,11 @@ function stopRecording() {
         mediaRecorder.stop();
     }
     isRecording = false;
-    addChatMessage('Система', 'Запись остановлена. Скачивание...', true);
+    
+    // Отправляем оповещение всем
+    socket.emit('recording-stopped', { roomId: roomId });
+    
+    addChatMessage('Система', '⏹️ Запись остановлена', true);
 }
 
 function saveRecording() {

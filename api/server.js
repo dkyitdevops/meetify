@@ -62,6 +62,15 @@ io.on('connection', (socket) => {
     socket.to(data.roomId).emit('ice-candidate', data);
   });
   
+  // Оповещения о записи
+  socket.on('recording-started', (data) => {
+    socket.to(data.roomId).emit('recording-started', { by: 'Участник' });
+  });
+  
+  socket.on('recording-stopped', (data) => {
+    socket.to(data.roomId).emit('recording-stopped', {});
+  });
+  
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
