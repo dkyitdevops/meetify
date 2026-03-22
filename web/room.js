@@ -13,9 +13,11 @@ document.getElementById('roomIdDisplay').textContent = roomId;
 // Глобальные переменные
 var socket = io();
 var localStream = null;
+var screenStream = null;
 var peerConnections = {};
 var isMicEnabled = true;
 var isCamEnabled = true;
+var isScreenSharing = false;
 
 // TURN сервер конфигурация
 var configuration = {
@@ -278,3 +280,95 @@ socket.on('chat-message', function(data) {
         addChatMessage(data.author || 'Гость', data.text, false);
     }
 });
+
+// ==================== ДЕМОНСТРАЦИЯ ЭКРАНА ====================
+
+async function toggleScreenShare() {
+    var screenBtn = document.getElementById('screenBtn');
+    
+    if (isScreenSharing) {
+        // Останавливаем демонстрацию
+        await stopScreenShare();
+        screenBtn.textContent = '🖥️';
+        screenBtn.classList.remove('muted');
+        isScreenSharing = false;
+    } else {
+        // Начинаем демонстрацию
+        try {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { cursor: 'always' },
+                audio: false
+            });
+            
+            // Заменяем видео-трек во всех peer connections
+            Object.keys(peerConnections).forEach(function(userId) {
+                var pc = peerConnections[userId];
+                var sender = pc.getSenders().find(function(s) {
+                    return s.track && s.track.kind === 'video';
+                });
+                
+                if (sender) {
+                    sender.replaceTrack(screenStream.getVideoTracks()[0]);
+                }
+            });
+            
+            // Показываем экран в локальном видео
+            var localVideo = document.getElementById('video-local');
+            if (localVideo) {
+                localVideo.srcObject = screenStream;
+            }
+            
+            // Обработчик остановки демонстрации
+            screenStream.getVideoTracks()[0].onended = function() {
+                stopScreenShare();
+                screenBtn.textContent = '🖥️';
+                screenBtn.classList.remove('muted');
+                isScreenSharing = false;
+            };
+            
+            screenBtn.textContent = '🛑';
+            screenBtn.classList.add('muted');
+            isScreenSharing = true;
+            
+            addChatMessage('Система', 'Демонстрация экрана началась', true);
+            
+        } catch (err) {
+            console.error('Error starting screen share:', err);
+            alert('Не удалось начать демонстрацию экрана');
+        }
+    }
+}
+
+async function stopScreenShare() {
+    if (screenStream) {
+        screenStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        screenStream = null;
+    }
+    
+    // Возвращаем камеру
+    if (localStream) {
+        var videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            Object.keys(peerConnections).forEach(function(userId) {
+                var pc = peerConnections[userId];
+                var sender = pc.getSenders().find(function(s) {
+                    return s.track && s.track.kind === 'video';
+                });
+                
+                if (sender) {
+                    sender.replaceTrack(videoTrack);
+                }
+            });
+        }
+        
+        // Возвращаем локальное видео
+        var localVideo = document.getElementById('video-local');
+        if (localVideo) {
+            localVideo.srcObject = localStream;
+        }
+    }
+    
+    addChatMessage('Система', 'Демонстрация экрана остановлена', true);
+}
