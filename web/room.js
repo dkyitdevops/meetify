@@ -574,3 +574,171 @@ document.addEventListener('keydown', function(e) {
         closeSettings();
     }
 });
+
+// ==================== ВИРТУАЛЬНЫЙ ФОН ====================
+
+var virtualBackground = 'none';
+var backgroundCanvas = null;
+var bgCtx = null;
+var backgroundImage = null;
+var segmentationInterval = null;
+
+// Загружаем сохранённый фон
+function loadVirtualBackground() {
+    var saved = localStorage.getItem('meetifyVirtualBg');
+    if (saved) {
+        virtualBackground = saved;
+        document.getElementById('virtualBackground').value = saved;
+        if (saved !== 'none') {
+            applyVirtualBackground(saved);
+        }
+    }
+}
+
+// Обработчик изменения фона
+document.getElementById('virtualBackground').addEventListener('change', function(e) {
+    var value = e.target.value;
+    virtualBackground = value;
+    localStorage.setItem('meetifyVirtualBg', value);
+    
+    if (value === 'custom') {
+        document.getElementById('customBgFile').style.display = 'block';
+    } else {
+        document.getElementById('customBgFile').style.display = 'none';
+        applyVirtualBackground(value);
+    }
+});
+
+// Загрузка своей картинки
+document.getElementById('customBgFile').addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            backgroundImage = new Image();
+            backgroundImage.onload = function() {
+                applyVirtualBackground('custom');
+            };
+            backgroundImage.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Применение виртуального фона
+function applyVirtualBackground(type) {
+    if (!localStream) {
+        alert('Сначала включите камеру');
+        return;
+    }
+    
+    // Останавливаем предыдущую обработку
+    if (segmentationInterval) {
+        clearInterval(segmentationInterval);
+        segmentationInterval = null;
+    }
+    
+    if (type === 'none') {
+        // Возвращаем оригинальный поток
+        var localVideo = document.getElementById('video-local');
+        if (localVideo) {
+            localVideo.srcObject = localStream;
+        }
+        return;
+    }
+    
+    // Создаём canvas для обработки
+    if (!backgroundCanvas) {
+        backgroundCanvas = document.createElement('canvas');
+        backgroundCanvas.width = 640;
+        backgroundCanvas.height = 480;
+        bgCtx = backgroundCanvas.getContext('2d');
+    }
+    
+    var videoTrack = localStream.getVideoTracks()[0];
+    var videoElement = document.createElement('video');
+    videoElement.srcObject = new MediaStream([videoTrack]);
+    videoElement.play();
+    
+    // Обработка кадров
+    segmentationInterval = setInterval(function() {
+        if (videoElement.readyState < 2) return;
+        
+        // Рисуем видео
+        bgCtx.drawImage(videoElement, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+        
+        if (type === 'blur') {
+            // Применяем размытие по краям (упрощённая версия)
+            applyBlurEffect();
+        } else if (backgroundImage && (type === 'custom' || type === 'office' || type === 'nature')) {
+            // Накладываем фоновое изображение
+            applyBackgroundImage();
+        }
+        
+        // Обновляем видео элемент
+        var localVideo = document.getElementById('video-local');
+        if (localVideo && backgroundCanvas.captureStream) {
+            var processedStream = backgroundCanvas.captureStream(30);
+            // Добавляем аудио
+            localStream.getAudioTracks().forEach(function(track) {
+                processedStream.addTrack(track);
+            });
+            localVideo.srcObject = processedStream;
+        }
+    }, 1000 / 30);
+    
+    addChatMessage('Система', 'Виртуальный фон применён', true);
+}
+
+// Упрощённое размытие
+function applyBlurEffect() {
+    var imageData = bgCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    var data = imageData.data;
+    
+    // Простое размытие по краям (эффект vignette + blur)
+    var centerX = backgroundCanvas.width / 2;
+    var centerY = backgroundCanvas.height / 2;
+    var maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+    
+    for (var y = 0; y < backgroundCanvas.height; y += 4) {
+        for (var x = 0; x < backgroundCanvas.width; x += 4) {
+            var dx = x - centerX;
+            var dy = y - centerY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var blurAmount = (dist / maxDist) * 0.8;
+            
+            if (blurAmount > 0.3) {
+                var idx = (y * backgroundCanvas.width + x) * 4;
+                // Упрощённое размытие — затемнение краёв
+                data[idx] *= (1 - blurAmount * 0.3);
+                data[idx + 1] *= (1 - blurAmount * 0.3);
+                data[idx + 2] *= (1 - blurAmount * 0.3);
+            }
+        }
+    }
+    
+    bgCtx.putImageData(imageData, 0, 0);
+}
+
+// Наложение фонового изображения
+function applyBackgroundImage() {
+    if (!backgroundImage) return;
+    
+    // Сохраняем текущее видео
+    var tempCanvas = document.createElement('canvas');
+    tempCanvas.width = backgroundCanvas.width;
+    tempCanvas.height = backgroundCanvas.height;
+    var tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(backgroundCanvas, 0, 0);
+    
+    // Рисуем фон
+    bgCtx.drawImage(backgroundImage, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
+    
+    // Накладываем видео с прозрачностью по центру
+    bgCtx.globalAlpha = 0.9;
+    bgCtx.drawImage(tempCanvas, 0, 0);
+    bgCtx.globalAlpha = 1.0;
+}
+
+// Загружаем фон при старте
+window.addEventListener('load', loadVirtualBackground);

@@ -469,6 +469,18 @@
             
             <div class="modal-body">
                 <div class="setting-item">
+                    <label>🎨 Виртуальный фон</label>
+                    <select id="virtualBackground" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(102, 126, 234, 0.3);">
+                        <option value="none" selected>Без фона</option>
+                        <option value="blur">Размытие</option>
+                        <option value="office">Офис</option>
+                        <option value="nature">Природа</option>
+                        <option value="custom">Своя картинка</option>
+                    </select>
+                    <input type="file" id="customBgFile" accept="image/*" style="display: none; margin-top: 10px;">
+                </div>
+                
+                <div class="setting-item">
                     <label>📁 Папка для сохранения записей</label>
                     <input type="text" id="downloadPath" placeholder="/downloads/meetify" 
                            value="">
