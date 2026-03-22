@@ -46,6 +46,18 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  turn:
+    image: docker.io/coturn/coturn:latest
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+      - "10000-10100:10000-10100/udp"
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
