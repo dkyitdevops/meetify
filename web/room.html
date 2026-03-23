@@ -162,7 +162,64 @@
             background: #667eea;
             color: #fff;
         }
-        
+
+        /* Реакции */
+        .reactions-panel {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(22, 33, 62, 0.95);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: none;
+            gap: 10px;
+            z-index: 200;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .reactions-panel.active {
+            display: flex;
+        }
+
+        .reaction-btn {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .reaction-btn:hover {
+            transform: scale(1.3);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .reaction-float {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+            z-index: 300;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(0.5);
+            }
+            50% {
+                transform: translateY(-100px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-200px) scale(1);
+            }
+        }
+
         .whiteboard-toolbar .close-btn {
             margin-left: auto;
             background: #ff4444;
@@ -695,6 +752,16 @@
         <canvas class="whiteboard-canvas" id="whiteboardCanvas"></canvas>
     </div>
 
+    <!-- Панель реакций -->
+    <div class="reactions-panel" id="reactionsPanel">
+        <button class="reaction-btn" onclick="sendReaction('👍')">👍</button>
+        <button class="reaction-btn" onclick="sendReaction('❤️')">❤️</button>
+        <button class="reaction-btn" onclick="sendReaction('😂')">😂</button>
+        <button class="reaction-btn" onclick="sendReaction('😮')">😮</button>
+        <button class="reaction-btn" onclick="sendReaction('😢')">😢</button>
+        <button class="reaction-btn" onclick="sendReaction('🎉')">🎉</button>
+    </div>
+
     <div class="main-content">
         <!-- Боковая панель участников -->
         <div class="sidebar" id="participantsSidebar" style="display: none;">
@@ -721,6 +788,7 @@
                 <button class="control-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" data-tooltip="Поднять руку">✋</button>
                 <button class="control-btn" id="pollBtn" onclick="openPollModal()" data-tooltip="Опрос">📊</button>
                 <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" data-tooltip="Whiteboard">🎨</button>
+                <button class="control-btn" id="reactionBtn" onclick="toggleReactions()" data-tooltip="Реакции">😊</button>
                 <button class="control-btn" id="participantsBtn" onclick="toggleParticipants()" data-tooltip="Участники">👥</button>
                 <button class="control-btn" id="chatBtn" onclick="toggleChat()" data-tooltip="Чат">💬</button>
                 <button class="control-btn" id="settingsBtn" onclick="openSettings()" data-tooltip="Настройки">⚙️</button>

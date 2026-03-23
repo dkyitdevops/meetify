@@ -33,13 +33,13 @@ app.post('/api/rooms', (req, res) => {
 // Socket.io для signaling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  
+
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-joined', socket.id);
     socket.emit('joined-room', roomId);
   });
-  
+
   // Чат сообщения
   socket.on('chat-message', (data) => {
     // Рассылаем сообщение всем в комнате кроме отправителя
@@ -49,46 +49,46 @@ io.on('connection', (socket) => {
       timestamp: new Date().toISOString()
     });
   });
-  
+
   socket.on('offer', (data) => {
     socket.to(data.roomId).emit('offer', data);
   });
-  
+
   socket.on('answer', (data) => {
     socket.to(data.roomId).emit('answer', data);
   });
-  
+
   socket.on('ice-candidate', (data) => {
     socket.to(data.roomId).emit('ice-candidate', data);
   });
-  
+
   // Оповещения о записи
   socket.on('recording-started', (data) => {
     socket.to(data.roomId).emit('recording-started', { by: 'Участник' });
   });
-  
+
   socket.on('recording-stopped', (data) => {
     socket.to(data.roomId).emit('recording-stopped', {});
   });
-  
+
   // Поднятие руки
   socket.on('raise-hand', (data) => {
-    socket.to(data.roomId).emit('hand-raised', { 
+    socket.to(data.roomId).emit('hand-raised', {
       name: 'Участник',
-      userId: data.userId 
+      userId: data.userId
     });
   });
-  
+
   socket.on('lower-hand', (data) => {
-    socket.to(data.roomId).emit('hand-lowered', { 
+    socket.to(data.roomId).emit('hand-lowered', {
       name: 'Участник',
-      userId: data.userId 
+      userId: data.userId
     });
   });
-  
+
   // Опросы и голосования
   const roomPolls = new Map(); // roomId -> { pollId, question, options, votes, voters }
-  
+
   socket.on('create-poll', (data) => {
     const pollId = Date.now().toString();
     const poll = {
@@ -113,7 +113,7 @@ io.on('connection', (socket) => {
       votes: poll.votes
     });
   });
-  
+
   socket.on('vote-poll', (data) => {
     const poll = roomPolls.get(data.roomId);
     if (poll && !poll.voters.has(socket.id) && data.optionIndex >= 0 && data.optionIndex < poll.options.length) {
@@ -129,7 +129,7 @@ io.on('connection', (socket) => {
       });
     }
   });
-  
+
   socket.on('close-poll', (data) => {
     const poll = roomPolls.get(data.roomId);
     if (poll && poll.createdBy === socket.id) {
@@ -138,16 +138,21 @@ io.on('connection', (socket) => {
       socket.emit('poll-closed', { id: poll.id });
     }
   });
-  
+
   // Whiteboard
   socket.on('whiteboard-draw', (data) => {
     socket.to(data.roomId).emit('whiteboard-draw', data);
   });
-  
+
   socket.on('whiteboard-clear', (data) => {
     socket.to(data.roomId).emit('whiteboard-clear', {});
   });
-  
+
+  // Reactions
+  socket.on('reaction', (data) => {
+    socket.to(data.roomId).emit('reaction', { emoji: data.emoji });
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     // Уведомляем всех об отключении

@@ -181,24 +181,6 @@ function clearWhiteboard() {
     socket.emit('whiteboard-clear', { roomId: roomId });
 }
 
-// Socket events for whiteboard
-socket.on('whiteboard-draw', function(data) {
-    if (!whiteboardCtx) return;
-    
-    whiteboardCtx.beginPath();
-    whiteboardCtx.moveTo(data.fromX, data.fromY);
-    whiteboardCtx.lineTo(data.toX, data.toY);
-    whiteboardCtx.strokeStyle = data.color;
-    whiteboardCtx.lineWidth = data.size;
-    whiteboardCtx.stroke();
-});
-
-socket.on('whiteboard-clear', function() {
-    if (!whiteboardCtx) return;
-    whiteboardCtx.fillStyle = '#ffffff';
-    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-});
-
 // ==================== УПРАВЛЕНИЕ ПАНЕЛЯМИ ====================
 
 var isParticipantsOpen = false;
@@ -462,6 +444,90 @@ socket.on('poll-closed', function(data) {
     resetPollForm();
     closePollModal();
     addChatMessage('Система', '📊 Опрос закрыт', true);
+});
+
+// Socket events для whiteboard
+socket.on('whiteboard-draw', function(data) {
+    if (!whiteboardCtx) return;
+    
+    whiteboardCtx.beginPath();
+    whiteboardCtx.moveTo(data.fromX, data.fromY);
+    whiteboardCtx.lineTo(data.toX, data.toY);
+    whiteboardCtx.strokeStyle = data.color;
+    whiteboardCtx.lineWidth = data.size;
+    whiteboardCtx.stroke();
+});
+
+socket.on('whiteboard-clear', function() {
+    if (!whiteboardCtx) return;
+    whiteboardCtx.fillStyle = '#ffffff';
+    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+});
+
+// ==================== РЕАКЦИИ ====================
+
+var isReactionsOpen = false;
+
+function toggleReactions() {
+    var panel = document.getElementById('reactionsPanel');
+    var btn = document.getElementById('reactionBtn');
+    
+    isReactionsOpen = !isReactionsOpen;
+    
+    if (isReactionsOpen) {
+        panel.classList.add('active');
+        btn.classList.add('active');
+        // Автоматически закрыть через 5 секунд
+        setTimeout(function() {
+            if (isReactionsOpen) {
+                toggleReactions();
+            }
+        }, 5000);
+    } else {
+        panel.classList.remove('active');
+        btn.classList.remove('active');
+    }
+}
+
+function sendReaction(emoji) {
+    // Показываем у себя
+    showReaction(emoji, true);
+    
+    // Отправляем другим
+    socket.emit('reaction', {
+        roomId: roomId,
+        emoji: emoji
+    });
+    
+    // Закрываем панель
+    toggleReactions();
+}
+
+function showReaction(emoji, isLocal) {
+    var reaction = document.createElement('div');
+    reaction.className = 'reaction-float';
+    reaction.textContent = emoji;
+    
+    // Случайная позиция по горизонтали
+    var randomX = Math.random() * 60 + 20; // 20% - 80% ширины
+    reaction.style.left = randomX + '%';
+    reaction.style.bottom = '150px';
+    
+    if (isLocal) {
+        reaction.style.color = '#667eea';
+    }
+    
+    document.body.appendChild(reaction);
+    
+    // Удаляем после анимации
+    setTimeout(function() {
+        reaction.remove();
+    }, 2000);
+}
+
+// Socket events для реакций
+socket.on('reaction', function(data) {
+    showReaction(data.emoji, false);
 });
 
 var localStream = null;
