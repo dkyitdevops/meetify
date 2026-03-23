@@ -32,9 +32,7 @@ jobs:
         PLAYWRIGHT_BROWSERS_PATH: 0
     
     - name: Run Playwright smoke tests
-      run: |
-        cd tests
-        npx playwright test playwright-smoke.spec.js --reporter=html
+      run: npx playwright test tests/playwright-smoke.spec.js --reporter=html
       env:
         CI: true
     
