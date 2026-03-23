@@ -19,6 +19,8 @@ var isMicEnabled = true;
 var isCamEnabled = true;
 var isScreenSharing = false;
 var isRecording = false;
+var isHandRaised = false;
+var raisedHands = [];
 var mediaRecorder = null;
 var recordedChunks = [];
 
@@ -625,147 +627,70 @@ document.getElementById('customBgFile').addEventListener('change', function(e) {
     }
 });
 
-// Применение виртуального фона с сегментацией
-async function applyVirtualBackground(type) {
+// Применение виртуального фона
+function applyVirtualBackground(type) {
     if (!localStream) {
         alert('Сначала включите камеру');
         return;
     }
     
+    // Останавливаем предыдущую обработку
     if (segmentationInterval) {
         clearInterval(segmentationInterval);
         segmentationInterval = null;
     }
     
-    var localVideo = document.getElementById('video-local');
-    if (!localVideo) return;
-    
     if (type === 'none') {
-        localVideo.style.filter = 'none';
-        // Очищаем canvas stream
-        if (localVideo._canvasStream) {
-            localVideo._canvasStream.getTracks().forEach(track => track.stop());
-            localVideo._canvasStream = null;
+        // Возвращаем оригинальный поток
+        var localVideo = document.getElementById('video-local');
+        if (localVideo) {
+            localVideo.srcObject = localStream;
         }
-        localVideo.srcObject = localStream;
         addChatMessage('Система', 'Виртуальный фон отключён', true);
         return;
     }
     
-    // Загружаем BodyPix
-    addChatMessage('Система', 'Загрузка модели сегментации...', true);
+    // Для простоты пока только CSS-эффекты
+    var localVideo = document.getElementById('video-local');
+    if (!localVideo) return;
     
-    try {
-        if (!window.bodyPix) {
-            addChatMessage('Система', 'Ошибка: библиотека не загружена', true);
-            localVideo.style.filter = 'blur(8px)';
-            return;
-        }
-        
-        const model = await bodyPix.load({
-            architecture: 'MobileNetV1',
-            outputStride: 16,
-            multiplier: 0.5,
-            quantBytes: 2
-        });
-        
-        addChatMessage('Система', 'Модель загружена, запуск сегментации...', true);
-        
-        // Создаём canvas
-        if (!backgroundCanvas) {
-            backgroundCanvas = document.createElement('canvas');
-            backgroundCanvas.width = 640;
-            backgroundCanvas.height = 480;
-            bgCtx = backgroundCanvas.getContext('2d');
-        }
-        
-        // Видео элемент для обработки
-        const video = document.createElement('video');
-        video.srcObject = localStream;
-        video.play();
-        
-        // Ждём готовности видео
-        await new Promise(resolve => {
-            video.onloadeddata = resolve;
-        });
-        
-        // Функция обработки кадра
-        async function processFrame() {
-            if (!video.videoWidth) return;
-            
-            // Сегментация
-            const segmentation = await model.segmentPerson(video, {
-                internalResolution: 'low',
-                segmentationThreshold: 0.7
-            });
-            
-            // Рисуем фон
-            if (type === 'blur') {
-                // Размытый фон
-                bgCtx.filter = 'blur(20px)';
-                bgCtx.drawImage(video, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                bgCtx.filter = 'none';
-            } else if (backgroundImage) {
-                // Картинка как фон
-                bgCtx.drawImage(backgroundImage, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            } else {
-                // Размытое видео как фон
-                bgCtx.filter = 'blur(15px)';
-                bgCtx.drawImage(video, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                bgCtx.filter = 'none';
-            }
-            
-            // Получаем данные фона
-            const bgData = bgCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            
-            // Создаём временный canvas для видео
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = backgroundCanvas.width;
-            tempCanvas.height = backgroundCanvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(video, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            const videoData = tempCtx.getImageData(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            
-            // Применяем маску: человек = видео, фон = картинка/размытие
-            for (let i = 0; i < segmentation.data.length; i++) {
-                const idx = i * 4;
-                if (segmentation.data[i] === 1) {
-                    // Человек - берём из видео
-                    bgData.data[idx] = videoData.data[idx];
-                    bgData.data[idx + 1] = videoData.data[idx + 1];
-                    bgData.data[idx + 2] = videoData.data[idx + 2];
-                    bgData.data[idx + 3] = videoData.data[idx + 3];
-                }
-            }
-            
-            bgCtx.putImageData(bgData, 0, 0);
-            
-            // Обновляем видео элемент через canvas
-            if (!localVideo._canvasStream) {
-                // Создаём stream из canvas один раз
-                if (backgroundCanvas.captureStream) {
-                    localVideo._canvasStream = backgroundCanvas.captureStream(30);
-                    // Добавляем аудио
-                    localStream.getAudioTracks().forEach(track => {
-                        localVideo._canvasStream.addTrack(track);
-                    });
-                    localVideo.srcObject = localVideo._canvasStream;
-                }
-            }
-        }
-        
-        // Запускаем обработку
-        segmentationInterval = setInterval(processFrame, 100);
-        
-        addChatMessage('Система', 'Виртуальный фон активен: ' + type, true);
-        
-    } catch (err) {
-        console.error('Virtual background error:', err);
-        // Fallback к CSS
+    if (type === 'blur') {
+        // Применяем CSS blur
         localVideo.style.filter = 'blur(8px)';
-        addChatMessage('Система', 'Ошибка сегментации, используется размытие', true);
+        addChatMessage('Система', 'Размытие фона включено', true);
+    } else {
+        // Для других фонов пока просто сообщение
+        localVideo.style.filter = 'none';
+        addChatMessage('Система', 'Фон \"' + type + '\" выбран (в разработке)', true);
     }
 }
+
+// ==================== ПОДНЯТИЕ РУКИ ====================
+
+function toggleRaiseHand() {
+    var btn = document.getElementById('raiseHandBtn');
+    isHandRaised = !isHandRaised;
+    
+    if (isHandRaised) {
+        btn.classList.add('muted');
+        socket.emit('raise-hand', { roomId: roomId });
+        addChatMessage('Система', '✋ Вы подняли руку', true);
+    } else {
+        btn.classList.remove('muted');
+        socket.emit('lower-hand', { roomId: roomId });
+        addChatMessage('Система', '✋ Вы опустили руку', true);
+    }
+}
+
+// Получение уведомлений о поднятых руках
+socket.on('hand-raised', function(data) {
+    addChatMessage('Система', '✋ ' + (data.name || 'Участник') + ' хочет выступить', true);
+    showNotification('Поднята рука', data.name + ' хочет выступить');
+});
+
+socket.on('hand-lowered', function(data) {
+    addChatMessage('Система', '✋ ' + (data.name || 'Участник') + ' опустил руку', true);
+});
 
 // Загружаем фон при старте
 window.addEventListener('load', loadVirtualBackground);

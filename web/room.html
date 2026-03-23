@@ -113,6 +113,44 @@
             position: relative;
         }
         
+        /* Tooltip */
+        .control-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+        
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover::after,
+        .control-btn:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+        
         /* Модальное окно настроек */
         .modal-overlay {
             position: fixed;
@@ -439,6 +477,7 @@
                 <button class="control-btn" id="camBtn" onclick="toggleCam()" data-tooltip="Камера">📹</button>
                 <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" data-tooltip="Демонстрация экрана">🖥️</button>
                 <button class="control-btn" id="recordBtn" onclick="toggleRecording()" data-tooltip="Запись">⏺️</button>
+                <button class="control-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" data-tooltip="Поднять руку">✋</button>
                 <button class="control-btn" id="settingsBtn" onclick="openSettings()" data-tooltip="Настройки">⚙️</button>
                 <button class="control-btn leave" onclick="leaveRoom()" data-tooltip="Выйти из комнаты">📞</button>
             </div>

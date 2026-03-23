@@ -71,6 +71,15 @@ io.on('connection', (socket) => {
     socket.to(data.roomId).emit('recording-stopped', {});
   });
   
+  // Поднятие руки
+  socket.on('raise-hand', (data) => {
+    socket.to(data.roomId).emit('hand-raised', { name: 'Участник' });
+  });
+  
+  socket.on('lower-hand', (data) => {
+    socket.to(data.roomId).emit('hand-lowered', { name: 'Участник' });
+  });
+  
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
