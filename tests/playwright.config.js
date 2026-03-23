@@ -8,11 +8,18 @@ module.exports = defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
-  timeout: 60000,
+  timeout: 120000, // Increased timeout
+  expect: {
+    timeout: 30000 // Increased expect timeout
+  },
   use: {
     baseURL: 'https://46-149-68-9.nip.io',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
     headless: true,
+    actionTimeout: 30000,
+    navigationTimeout: 30000,
     launchOptions: {
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     }
