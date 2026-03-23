@@ -26,7 +26,9 @@ jobs:
     - name: Install Playwright Browsers
       run: |
         cd tests
-        npx playwright install --with-deps
+        npx playwright install chromium
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: 0
     
     - name: Run Playwright smoke tests
       run: |
