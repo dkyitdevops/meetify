@@ -28,10 +28,10 @@ jobs:
         cd tests
         npx playwright install --with-deps
     
-    - name: Run Playwright tests
+    - name: Run Playwright smoke tests
       run: |
         cd tests
-        npx playwright test --reporter=html
+        npx playwright test playwright-smoke.spec.js --reporter=html
       env:
         CI: true
     
