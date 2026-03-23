@@ -86,6 +86,34 @@
             border: 3px solid #667eea; 
         }
         
+        /* Иконка поднятой руки на видео */
+        .hand-raised-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            background: rgba(102, 126, 234, 0.9);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 1.5s infinite;
+            z-index: 10;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+        
+        .video-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
         /* Контролы */
         .controls { 
             display: flex; 
@@ -465,6 +493,7 @@
             <span>Комната:</span>
             <span class="room-id" id="roomIdDisplay">...</span>
             <button class="copy-btn" onclick="copyRoomId()">📋 Копировать</button>
+            <button class="copy-btn" onclick="showInviteModal()" style="background: #22c55e;">✉️ Пригласить</button>
         </div>
     </div>
     
@@ -546,6 +575,39 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeSettings()">Отмена</button>
                 <button class="btn-primary" onclick="saveSettings()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно приглашений -->
+    <div class="modal-overlay" id="inviteModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>✉️ Пригласить в комнату</h2>
+                <button class="modal-close" onclick="closeInviteModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label>🔗 Ссылка на комнату</label>
+                    <input type="text" id="inviteLink" readonly style="background: rgba(0,0,0,0.3);">
+                    <button class="btn-primary" onclick="copyInviteLink()" style="width: 100%; margin-top: 10px;">📋 Копировать ссылку</button>
+                </div>
+                
+                <div class="divider"><span>или</span></div>
+                
+                <div class="setting-item">
+                    <label>📱 Поделиться</label>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                        <button class="btn-secondary" onclick="shareTelegram()" style="flex: 1;">📨 Telegram</button>
+                        <button class="btn-secondary" onclick="shareEmail()" style="flex: 1;">📧 Email</button>
+                        <button class="btn-secondary" onclick="shareWhatsApp()" style="flex: 1;">💬 WhatsApp</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeInviteModal()">Закрыть</button>
             </div>
         </div>
     </div>

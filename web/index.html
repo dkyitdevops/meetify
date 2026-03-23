@@ -136,11 +136,18 @@
         
         <div class="join-form">
             <input type="text" id="roomId" placeholder="Введите ID комнаты" maxlength="20">
+            <input type="password" id="roomPassword" placeholder="Пароль (если есть)" style="display: none;">
             <button class="btn btn-primary" onclick="joinRoom()">🔑 Присоединиться</button>
             
             <div class="divider"><span>или</span></div>
             
             <button class="btn btn-secondary" onclick="createRoom()">➕ Создать новую комнату</button>
+            
+            <div id="createOptions" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <input type="password" id="newRoomPassword" placeholder="Установить пароль (опционально)">
+                <button class="btn btn-primary" onclick="createRoomWithPassword()" style="margin-top: 10px;">🚀 Создать комнату</button>
+                <button class="btn btn-secondary" onclick="cancelCreate()" style="margin-top: 10px;">Отмена</button>
+            </div>
         </div>
         
         <div class="features">
@@ -161,20 +168,47 @@
     
     <script>
         function createRoom() {
+            document.getElementById('createOptions').style.display = 'block';
+        }
+        
+        function cancelCreate() {
+            document.getElementById('createOptions').style.display = 'none';
+        }
+        
+        function createRoomWithPassword() {
             var roomId = Math.random().toString(36).substring(2, 9);
-            window.location.href = '/room.html?id=' + roomId;
+            var password = document.getElementById('newRoomPassword').value;
+            
+            // Сохраняем пароль в sessionStorage (временно)
+            if (password) {
+                sessionStorage.setItem('room_' + roomId + '_password', password);
+            }
+            
+            window.location.href = '/room.html?id=' + roomId + (password ? '&hasPassword=1' : '');
         }
         
         function joinRoom() {
             var roomId = document.getElementById('roomId').value.trim();
+            var password = document.getElementById('roomPassword').value;
+            
             if (!roomId) {
                 alert('Введите ID комнаты');
                 return;
             }
-            window.location.href = '/room.html?id=' + encodeURIComponent(roomId);
+            
+            window.location.href = '/room.html?id=' + encodeURIComponent(roomId) + (password ? '&pwd=' + encodeURIComponent(password) : '');
+        }
+        
+        // Показываем поле пароля если в URL есть hasPassword
+        if (window.location.search.includes('hasPassword=1')) {
+            document.getElementById('roomPassword').style.display = 'block';
         }
         
         // Enter для входа
+        document.getElementById('roomId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') joinRoom();
+        });
+    </script>
         document.getElementById('roomId').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') joinRoom();
         });

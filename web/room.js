@@ -10,6 +10,49 @@ if (!roomId) {
 // Отображаем ID комнаты
 document.getElementById('roomIdDisplay').textContent = roomId;
 
+// Устанавливаем ссылку для приглашения
+document.getElementById('inviteLink').value = window.location.href;
+
+// ==================== ПРИГЛАШЕНИЯ ====================
+
+function showInviteModal() {
+    document.getElementById('inviteModal').classList.add('active');
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteModal').classList.remove('active');
+}
+
+function copyInviteLink() {
+    var link = document.getElementById('inviteLink');
+    link.select();
+    document.execCommand('copy');
+    alert('Ссылка скопирована!');
+}
+
+function shareTelegram() {
+    var text = 'Присоединяйся к видеоконференции в Meetify: ' + window.location.href;
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.href) + '&text=' + encodeURIComponent(text), '_blank');
+}
+
+function shareEmail() {
+    var subject = 'Приглашение на видеоконференцию Meetify';
+    var body = 'Привет!\n\nПриглашаю тебя на видеоконференцию в Meetify.\n\nСсылка: ' + window.location.href + '\n\nID комнаты: ' + roomId;
+    window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+
+function shareWhatsApp() {
+    var text = 'Присоединяйся к видеоконференции в Meetify: ' + window.location.href;
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+// Закрытие по клику вне модалки
+document.getElementById('inviteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeInviteModal();
+    }
+});
+
 // Глобальные переменные
 var socket = io();
 var localStream = null;
@@ -70,18 +113,26 @@ async function connectToRoom() {
 
 function addVideoStream(stream, userId, isLocal) {
     var videosContainer = document.getElementById('videos');
-    var video = document.getElementById('video-' + userId);
+    var wrapper = document.getElementById('wrapper-' + userId);
     
-    if (!video) {
-        video = document.createElement('video');
+    if (!wrapper) {
+        // Создаём wrapper для видео и иконки
+        wrapper = document.createElement('div');
+        wrapper.className = 'video-wrapper';
+        wrapper.id = 'wrapper-' + userId;
+        
+        var video = document.createElement('video');
         video.id = 'video-' + userId;
         video.autoplay = true;
         video.playsInline = true;
         if (isLocal) video.classList.add('local-video');
-        video.muted = isLocal; // Mute local video to prevent echo
-        videosContainer.appendChild(video);
+        video.muted = isLocal;
+        
+        wrapper.appendChild(video);
+        videosContainer.appendChild(wrapper);
     }
     
+    var video = document.getElementById('video-' + userId);
     video.srcObject = stream;
 }
 
@@ -673,12 +724,14 @@ function toggleRaiseHand() {
     
     if (isHandRaised) {
         btn.classList.add('muted');
-        socket.emit('raise-hand', { roomId: roomId });
+        socket.emit('raise-hand', { roomId: roomId, userId: 'local' });
         addChatMessage('Система', '✋ Вы подняли руку', true);
+        showHandRaisedIcon('local');
     } else {
         btn.classList.remove('muted');
-        socket.emit('lower-hand', { roomId: roomId });
+        socket.emit('lower-hand', { roomId: roomId, userId: 'local' });
         addChatMessage('Система', '✋ Вы опустили руку', true);
+        hideHandRaisedIcon('local');
     }
 }
 
@@ -686,11 +739,41 @@ function toggleRaiseHand() {
 socket.on('hand-raised', function(data) {
     addChatMessage('Система', '✋ ' + (data.name || 'Участник') + ' хочет выступить', true);
     showNotification('Поднята рука', data.name + ' хочет выступить');
+    
+    // Показываем иконку на видео
+    showHandRaisedIcon(data.userId || 'local');
 });
 
 socket.on('hand-lowered', function(data) {
     addChatMessage('Система', '✋ ' + (data.name || 'Участник') + ' опустил руку', true);
+    
+    // Скрываем иконку
+    hideHandRaisedIcon(data.userId || 'local');
 });
+
+// Показать иконку поднятой руки
+function showHandRaisedIcon(userId) {
+    var wrapper = document.getElementById('wrapper-' + userId);
+    if (!wrapper) return;
+    
+    // Удаляем старую иконку если есть
+    hideHandRaisedIcon(userId);
+    
+    // Создаём иконку
+    var icon = document.createElement('div');
+    icon.className = 'hand-raised-icon';
+    icon.id = 'hand-icon-' + userId;
+    icon.textContent = '✋';
+    wrapper.appendChild(icon);
+}
+
+// Скрыть иконку поднятой руки
+function hideHandRaisedIcon(userId) {
+    var icon = document.getElementById('hand-icon-' + userId);
+    if (icon) {
+        icon.remove();
+    }
+}
 
 // Загружаем фон при старте
 window.addEventListener('load', loadVirtualBackground);
