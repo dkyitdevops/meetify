@@ -13,6 +13,228 @@ document.getElementById('roomIdDisplay').textContent = roomId;
 // Устанавливаем ссылку для приглашения
 document.getElementById('inviteLink').value = window.location.href;
 
+// ==================== УПРАВЛЕНИЕ ПАНЕЛЯМИ ====================
+
+var isParticipantsOpen = false;
+var isChatOpen = true;
+
+function toggleParticipants() {
+    var sidebar = document.getElementById('participantsSidebar');
+    var videoSection = document.getElementById('videoSection');
+    
+    isParticipantsOpen = !isParticipantsOpen;
+    
+    if (isParticipantsOpen) {
+        sidebar.style.display = 'flex';
+        videoSection.classList.remove('expanded');
+    } else {
+        sidebar.style.display = 'none';
+        if (!isChatOpen) {
+            videoSection.classList.add('expanded');
+        }
+    }
+    
+    updateParticipantsList();
+}
+
+function toggleChat() {
+    var chatSection = document.getElementById('chatSection');
+    var videoSection = document.getElementById('videoSection');
+    var chatBtn = document.getElementById('chatBtn');
+    
+    isChatOpen = !isChatOpen;
+    
+    if (isChatOpen) {
+        chatSection.classList.remove('hidden');
+        chatBtn.classList.remove('muted');
+        videoSection.classList.remove('expanded');
+    } else {
+        chatSection.classList.add('hidden');
+        chatBtn.classList.add('muted');
+        if (!isParticipantsOpen) {
+            videoSection.classList.add('expanded');
+        }
+    }
+}
+
+// ==================== УЧАСТНИКИ ====================
+
+var participants = [{ id: 'local', name: 'Вы' }];
+
+function updateParticipantsList() {
+    var list = document.getElementById('participantsList');
+    if (!list) return;
+    
+    list.innerHTML = '';
+    
+    participants.forEach(function(p) {
+        var li = document.createElement('li');
+        li.style.cssText = 'padding: 10px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;';
+        li.innerHTML = '<span>🎥</span><span>' + (p.name || 'Участник') + '</span>' + (p.id === 'local' ? ' <small>(Вы)</small>' : '');
+        list.appendChild(li);
+    });
+}
+
+function addParticipant(userId, name) {
+    if (!participants.find(function(p) { return p.id === userId; })) {
+        participants.push({ id: userId, name: name || 'Участник ' + userId.substr(0, 6) });
+        updateParticipantsList();
+    }
+}
+
+function removeParticipant(userId) {
+    participants = participants.filter(function(p) { return p.id !== userId; });
+    updateParticipantsList();
+}
+
+// Закрытие по клику вне модалки
+document.getElementById('participantsModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeParticipantsModal();
+    }
+});
+
+// ==================== ОПРОСЫ ====================
+
+var currentPoll = null;
+var hasVoted = false;
+
+function openPollModal() {
+    document.getElementById('pollModal').classList.add('active');
+    resetPollForm();
+}
+
+function closePollModal() {
+    document.getElementById('pollModal').classList.remove('active');
+}
+
+function resetPollForm() {
+    document.getElementById('pollCreateForm').style.display = 'block';
+    document.getElementById('activePoll').style.display = 'none';
+    document.getElementById('pollQuestion').value = '';
+    document.getElementById('pollOptions').innerHTML = 
+        '<input type="text" class="poll-option" placeholder="Вариант 1" maxlength="100">' +
+        '<input type="text" class="poll-option" placeholder="Вариант 2" maxlength="100">';
+}
+
+function addPollOption() {
+    var container = document.getElementById('pollOptions');
+    var count = container.getElementsByClassName('poll-option').length;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'poll-option';
+    input.placeholder = 'Вариант ' + (count + 1);
+    input.maxLength = 100;
+    container.appendChild(input);
+}
+
+function createPoll() {
+    var question = document.getElementById('pollQuestion').value.trim();
+    var optionInputs = document.getElementsByClassName('poll-option');
+    var options = [];
+    
+    for (var i = 0; i < optionInputs.length; i++) {
+        var val = optionInputs[i].value.trim();
+        if (val) options.push(val);
+    }
+    
+    if (!question) {
+        alert('Введите вопрос');
+        return;
+    }
+    
+    if (options.length < 2) {
+        alert('Добавьте минимум 2 варианта');
+        return;
+    }
+    
+    socket.emit('create-poll', {
+        roomId: roomId,
+        question: question,
+        options: options
+    });
+}
+
+function votePoll(optionIndex) {
+    if (hasVoted || !currentPoll) return;
+    
+    socket.emit('vote-poll', {
+        roomId: roomId,
+        optionIndex: optionIndex
+    });
+    
+    hasVoted = true;
+    
+    // Помечаем выбранный вариант
+    var buttons = document.getElementById('activePollOptions').getElementsByTagName('button');
+    for (var i = 0; i < buttons.length; i++) {
+        if (i === optionIndex) {
+            buttons[i].classList.add('voted');
+        }
+        buttons[i].disabled = true;
+    }
+}
+
+function closePoll() {
+    socket.emit('close-poll', { roomId: roomId });
+}
+
+function showActivePoll(poll) {
+    currentPoll = poll;
+    hasVoted = false;
+    
+    document.getElementById('pollCreateForm').style.display = 'none';
+    document.getElementById('activePoll').style.display = 'block';
+    document.getElementById('activePollQuestion').textContent = poll.question;
+    
+    var optionsHtml = '';
+    for (var i = 0; i < poll.options.length; i++) {
+        optionsHtml += '<button class="poll-option-btn" onclick="votePoll(' + i + ')">' + 
+            poll.options[i] + '</button>';
+    }
+    document.getElementById('activePollOptions').innerHTML = optionsHtml;
+    document.getElementById('pollResults').style.display = 'none';
+}
+
+function updatePollResults(votes) {
+    if (!currentPoll) return;
+    
+    var total = votes.reduce(function(a, b) { return a + b; }, 0);
+    var resultsHtml = '';
+    
+    for (var i = 0; i < currentPoll.options.length; i++) {
+        var percent = total > 0 ? Math.round((votes[i] / total) * 100) : 0;
+        resultsHtml += 
+            '<div class="poll-result-bar">' +
+                '<div class="poll-result-fill" style="width: ' + percent + '%;"></div>' +
+                '<div class="poll-result-text">' + currentPoll.options[i] + ': ' + votes[i] + ' (' + percent + '%)</div>' +
+            '</div>';
+    }
+    
+    document.getElementById('pollResultsContent').innerHTML = resultsHtml;
+    document.getElementById('pollResults').style.display = 'block';
+}
+
+// Socket events для опросов
+socket.on('poll-created', function(data) {
+    currentPoll = data;
+    hasVoted = false;
+    showActivePoll(data);
+    addChatMessage('Система', '📊 Новый опрос: ' + data.question, true);
+});
+
+socket.on('poll-updated', function(data) {
+    updatePollResults(data.votes);
+});
+
+socket.on('poll-closed', function(data) {
+    currentPoll = null;
+    hasVoted = false;
+    resetPollForm();
+    closePollModal();
+    addChatMessage('Система', '📊 Опрос закрыт', true);
+});
+
 // ==================== ПРИГЛАШЕНИЯ ====================
 
 function showInviteModal() {
@@ -112,7 +334,13 @@ async function connectToRoom() {
 }
 
 function addVideoStream(stream, userId, isLocal) {
+    console.log('Adding video stream for user:', userId);
     var videosContainer = document.getElementById('videos');
+    if (!videosContainer) {
+        console.error('Videos container not found');
+        return;
+    }
+    
     var wrapper = document.getElementById('wrapper-' + userId);
     
     if (!wrapper) {
@@ -130,10 +358,16 @@ function addVideoStream(stream, userId, isLocal) {
         
         wrapper.appendChild(video);
         videosContainer.appendChild(wrapper);
+        console.log('Created new video element for user:', userId);
     }
     
     var video = document.getElementById('video-' + userId);
-    video.srcObject = stream;
+    if (video) {
+        video.srcObject = stream;
+        console.log('Set stream for user:', userId);
+    } else {
+        console.error('Video element not found for user:', userId);
+    }
 }
 
 // Управление микрофоном
@@ -241,22 +475,36 @@ socket.on('user-joined', async function(userId) {
     console.log('User joined:', userId);
     addChatMessage('Система', 'Новый участник присоединился', true);
     
-    if (!localStream) return;
+    // Добавляем в список участников
+    addParticipant(userId, 'Участник ' + userId.substr(0, 6));
+    
+    if (!localStream) {
+        console.log('Local stream not ready yet');
+        return;
+    }
     
     try {
+        // Создаём RTCPeerConnection
         var pc = new RTCPeerConnection(configuration);
         peerConnections[userId] = pc;
         
+        // Добавляем свои треки
         localStream.getTracks().forEach(function(track) {
             pc.addTrack(track, localStream);
         });
         
+        // Обрабатываем входящие треки
         pc.ontrack = function(event) {
-            addVideoStream(event.streams[0], userId);
+            console.log('Received track from user:', userId);
+            if (event.streams && event.streams[0]) {
+                addVideoStream(event.streams[0], userId);
+            }
         };
         
+        // ICE кандидаты
         pc.onicecandidate = function(event) {
             if (event.candidate) {
+                console.log('Sending ICE candidate to:', userId);
                 socket.emit('ice-candidate', {
                     roomId: roomId,
                     candidate: event.candidate,
@@ -265,6 +513,8 @@ socket.on('user-joined', async function(userId) {
             }
         };
         
+        // Создаём offer
+        console.log('Creating offer for:', userId);
         var offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         
@@ -329,6 +579,27 @@ socket.on('ice-candidate', async function(data) {
     if (pc) {
         await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
     }
+});
+
+// Обработка отключения участника
+socket.on('user-left', function(data) {
+    console.log('User left:', data.userId);
+    addChatMessage('Система', 'Участник вышел', true);
+    
+    // Удаляем видео
+    var wrapper = document.getElementById('wrapper-' + data.userId);
+    if (wrapper) {
+        wrapper.remove();
+    }
+    
+    // Закрываем соединение
+    if (peerConnections[data.userId]) {
+        peerConnections[data.userId].close();
+        delete peerConnections[data.userId];
+    }
+    
+    // Удаляем из списка
+    removeParticipant(data.userId);
 });
 
 socket.on('chat-message', function(data) {

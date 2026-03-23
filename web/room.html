@@ -62,6 +62,104 @@
             flex: 2; 
             display: flex;
             flex-direction: column;
+            transition: flex 0.3s;
+        }
+        
+        .video-section.expanded {
+            flex: 3;
+        }
+        
+        /* Боковая панель участников */
+        .sidebar {
+            width: 300px;
+            background: #16213e;
+            border-radius: 16px;
+            margin-right: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+        
+        /* Чат можно скрыть */
+        .chat-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        
+        .chat-section.hidden {
+            display: none;
+        }
+        
+        /* Стили для опросов */
+        .poll-option {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .poll-option-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: rgba(102, 126, 234, 0.2);
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .poll-option-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+        }
+        
+        .poll-option-btn.voted {
+            background: #22c55e;
+            border-color: #22c55e;
+        }
+        
+        .poll-result-bar {
+            height: 30px;
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .poll-result-fill {
+            height: 100%;
+            background: #667eea;
+            border-radius: 8px;
+            transition: width 0.3s;
+        }
+        
+        .poll-result-text {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            font-size: 12px;
         }
         
         #videos { 
@@ -498,7 +596,21 @@
     </div>
     
     <div class="main-content">
-        <div class="video-section">
+        <!-- Боковая панель участников -->
+        <div class="sidebar" id="participantsSidebar" style="display: none;">
+            <div class="sidebar-header">
+                <span>👥 Участники</span>
+                <button onclick="toggleParticipants()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <ul id="participantsList" style="list-style: none; padding: 15px; margin: 0; overflow-y: auto; flex: 1;">
+                <li style="padding: 10px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                    <span>🎥</span>
+                    <span>Вы</span>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="video-section" id="videoSection">
             <div id="videos"></div>
             
             <div class="controls">
@@ -507,12 +619,15 @@
                 <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" data-tooltip="Демонстрация экрана">🖥️</button>
                 <button class="control-btn" id="recordBtn" onclick="toggleRecording()" data-tooltip="Запись">⏺️</button>
                 <button class="control-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" data-tooltip="Поднять руку">✋</button>
+                <button class="control-btn" id="pollBtn" onclick="openPollModal()" data-tooltip="Опрос">📊</button>
+                <button class="control-btn" id="participantsBtn" onclick="toggleParticipants()" data-tooltip="Участники">👥</button>
+                <button class="control-btn" id="chatBtn" onclick="toggleChat()" data-tooltip="Чат">💬</button>
                 <button class="control-btn" id="settingsBtn" onclick="openSettings()" data-tooltip="Настройки">⚙️</button>
                 <button class="control-btn leave" onclick="leaveRoom()" data-tooltip="Выйти из комнаты">📞</button>
             </div>
         </div>
         
-        <div class="chat-section">
+        <div class="chat-section" id="chatSection">
             <div class="chat-container">
                 <div class="chat-header">
                     💬 Чат
@@ -522,6 +637,50 @@
                 <div class="chat-input">
                     <input type="text" id="chatInput" placeholder="Введите сообщение..." maxlength="500">
                     <button onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно опросов -->
+    <div class="modal-overlay" id="pollModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📊 Опрос</h2>
+                <button class="modal-close" onclick="closePollModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body" id="pollContent">
+                <!-- Форма создания опроса -->
+                <div id="pollCreateForm">
+                    <div class="setting-item">
+                        <label>Вопрос</label>
+                        <input type="text" id="pollQuestion" placeholder="Введите вопрос..." maxlength="200">
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label>Варианты ответа</label>
+                        <div id="pollOptions">
+                            <input type="text" class="poll-option" placeholder="Вариант 1" maxlength="100">
+                            <input type="text" class="poll-option" placeholder="Вариант 2" maxlength="100">
+                        </div>
+                        <button class="btn-secondary" onclick="addPollOption()" style="margin-top: 10px; width: 100%;">➕ Добавить вариант</button>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="createPoll()" style="width: 100%; margin-top: 20px;">🚀 Создать опрос</button>
+                </div>
+                
+                <!-- Активный опрос -->
+                <div id="activePoll" style="display: none;">
+                    <h3 id="activePollQuestion"></h3>
+                    <div id="activePollOptions"></div>
+                    
+                    <div id="pollResults" style="display: none; margin-top: 20px;">
+                        <h4>Результаты:</h4>
+                        <div id="pollResultsContent"></div>
+                    </div>
+                    
+                    <button class="btn-secondary" onclick="closePoll()" style="width: 100%; margin-top: 20px;">❌ Закрыть опрос</button>
                 </div>
             </div>
         </div>
@@ -575,6 +734,28 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeSettings()">Отмена</button>
                 <button class="btn-primary" onclick="saveSettings()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно участников -->
+    <div class="modal-overlay" id="participantsModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>👥 Участники комнаты</h2>
+                <button class="modal-close" onclick="closeParticipantsModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <ul id="participantsList" style="list-style: none; padding: 0;">
+                    <li style="padding: 10px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; margin-bottom: 10px;">
+                        <strong>Вы</strong> (Вы)
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeParticipantsModal()">Закрыть</button>
             </div>
         </div>
     </div>
