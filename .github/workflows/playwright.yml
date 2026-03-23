@@ -21,6 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd tests
+        npm install @playwright/test
         npm install
     
     - name: Install Playwright Browsers
