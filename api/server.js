@@ -139,6 +139,15 @@ io.on('connection', (socket) => {
     }
   });
   
+  // Whiteboard
+  socket.on('whiteboard-draw', (data) => {
+    socket.to(data.roomId).emit('whiteboard-draw', data);
+  });
+  
+  socket.on('whiteboard-clear', (data) => {
+    socket.to(data.roomId).emit('whiteboard-clear', {});
+  });
+  
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     // Уведомляем всех об отключении

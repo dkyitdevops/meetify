@@ -10,8 +10,194 @@ if (!roomId) {
 // Отображаем ID комнаты
 document.getElementById('roomIdDisplay').textContent = roomId;
 
+// Загружаем данные комнаты из sessionStorage
+var roomDataStr = sessionStorage.getItem('room_' + roomId + '_data');
+if (roomDataStr) {
+    try {
+        var roomData = JSON.parse(roomDataStr);
+        if (roomData.name) {
+            document.getElementById('roomTitle').textContent = roomData.name;
+        }
+        if (roomData.description) {
+            document.getElementById('roomDesc').textContent = roomData.description;
+        }
+    } catch (e) {
+        console.error('Error parsing room data:', e);
+    }
+}
+
 // Устанавливаем ссылку для приглашения
 document.getElementById('inviteLink').value = window.location.href;
+
+// ==================== WHITEBOARD ====================
+
+var isWhiteboardOpen = false;
+var whiteboardCanvas = null;
+var whiteboardCtx = null;
+var isDrawing = false;
+var currentTool = 'pen';
+var penColor = '#000000';
+var penSize = 3;
+var lastX = 0;
+var lastY = 0;
+
+function initWhiteboard() {
+    whiteboardCanvas = document.getElementById('whiteboardCanvas');
+    if (!whiteboardCanvas) return;
+    
+    // Set canvas size
+    var container = document.getElementById('whiteboardContainer');
+    whiteboardCanvas.width = container.clientWidth - 40;
+    whiteboardCanvas.height = container.clientHeight - 80;
+    
+    whiteboardCtx = whiteboardCanvas.getContext('2d');
+    whiteboardCtx.lineCap = 'round';
+    whiteboardCtx.lineJoin = 'round';
+    
+    // Mouse events
+    whiteboardCanvas.addEventListener('mousedown', startDrawing);
+    whiteboardCanvas.addEventListener('mousemove', draw);
+    whiteboardCanvas.addEventListener('mouseup', stopDrawing);
+    whiteboardCanvas.addEventListener('mouseout', stopDrawing);
+    
+    // Touch events
+    whiteboardCanvas.addEventListener('touchstart', handleTouch);
+    whiteboardCanvas.addEventListener('touchmove', handleTouch);
+    whiteboardCanvas.addEventListener('touchend', stopDrawing);
+}
+
+function toggleWhiteboard() {
+    var container = document.getElementById('whiteboardContainer');
+    var btn = document.getElementById('whiteboardBtn');
+    
+    isWhiteboardOpen = !isWhiteboardOpen;
+    
+    if (isWhiteboardOpen) {
+        container.classList.add('active');
+        btn.classList.add('active');
+        if (!whiteboardCanvas) {
+            initWhiteboard();
+        }
+    } else {
+        container.classList.remove('active');
+        btn.classList.remove('active');
+    }
+}
+
+function startDrawing(e) {
+    isDrawing = true;
+    var rect = whiteboardCanvas.getBoundingClientRect();
+    lastX = e.clientX - rect.left;
+    lastY = e.clientY - rect.top;
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    
+    var rect = whiteboardCanvas.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
+    
+    whiteboardCtx.beginPath();
+    whiteboardCtx.moveTo(lastX, lastY);
+    whiteboardCtx.lineTo(x, y);
+    
+    if (currentTool === 'eraser') {
+        whiteboardCtx.strokeStyle = '#ffffff';
+        whiteboardCtx.lineWidth = 20;
+    } else {
+        whiteboardCtx.strokeStyle = penColor;
+        whiteboardCtx.lineWidth = penSize;
+    }
+    
+    whiteboardCtx.stroke();
+    
+    // Send to other users
+    socket.emit('whiteboard-draw', {
+        roomId: roomId,
+        fromX: lastX,
+        fromY: lastY,
+        toX: x,
+        toY: y,
+        color: currentTool === 'eraser' ? '#ffffff' : penColor,
+        size: currentTool === 'eraser' ? 20 : penSize
+    });
+    
+    lastX = x;
+    lastY = y;
+}
+
+function stopDrawing() {
+    isDrawing = false;
+}
+
+function handleTouch(e) {
+    e.preventDefault();
+    var touch = e.touches[0];
+    var mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    whiteboardCanvas.dispatchEvent(mouseEvent);
+}
+
+function setPenColor(color) {
+    penColor = color;
+    currentTool = 'pen';
+    updateToolButtons();
+    
+    // Update color buttons
+    var colorBtns = document.querySelectorAll('.color-btn');
+    colorBtns.forEach(function(btn) {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick').includes(color)) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function setTool(tool) {
+    currentTool = tool;
+    updateToolButtons();
+}
+
+function updateToolButtons() {
+    var penBtn = document.getElementById('penTool');
+    var eraserBtn = document.getElementById('eraserTool');
+    
+    if (penBtn) {
+        penBtn.classList.toggle('active', currentTool === 'pen');
+    }
+    if (eraserBtn) {
+        eraserBtn.classList.toggle('active', currentTool === 'eraser');
+    }
+}
+
+function clearWhiteboard() {
+    if (!whiteboardCtx) return;
+    whiteboardCtx.fillStyle = '#ffffff';
+    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+    
+    socket.emit('whiteboard-clear', { roomId: roomId });
+}
+
+// Socket events for whiteboard
+socket.on('whiteboard-draw', function(data) {
+    if (!whiteboardCtx) return;
+    
+    whiteboardCtx.beginPath();
+    whiteboardCtx.moveTo(data.fromX, data.fromY);
+    whiteboardCtx.lineTo(data.toX, data.toY);
+    whiteboardCtx.strokeStyle = data.color;
+    whiteboardCtx.lineWidth = data.size;
+    whiteboardCtx.stroke();
+});
+
+socket.on('whiteboard-clear', function() {
+    if (!whiteboardCtx) return;
+    whiteboardCtx.fillStyle = '#ffffff';
+    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+});
 
 // ==================== УПРАВЛЕНИЕ ПАНЕЛЯМИ ====================
 
@@ -215,26 +401,6 @@ function updatePollResults(votes) {
     document.getElementById('pollResults').style.display = 'block';
 }
 
-// Socket events для опросов
-socket.on('poll-created', function(data) {
-    currentPoll = data;
-    hasVoted = false;
-    showActivePoll(data);
-    addChatMessage('Система', '📊 Новый опрос: ' + data.question, true);
-});
-
-socket.on('poll-updated', function(data) {
-    updatePollResults(data.votes);
-});
-
-socket.on('poll-closed', function(data) {
-    currentPoll = null;
-    hasVoted = false;
-    resetPollForm();
-    closePollModal();
-    addChatMessage('Система', '📊 Опрос закрыт', true);
-});
-
 // ==================== ПРИГЛАШЕНИЯ ====================
 
 function showInviteModal() {
@@ -277,6 +443,27 @@ document.getElementById('inviteModal').addEventListener('click', function(e) {
 
 // Глобальные переменные
 var socket = io();
+
+// Socket events для опросов
+socket.on('poll-created', function(data) {
+    currentPoll = data;
+    hasVoted = false;
+    showActivePoll(data);
+    addChatMessage('Система', '📊 Новый опрос: ' + data.question, true);
+});
+
+socket.on('poll-updated', function(data) {
+    updatePollResults(data.votes);
+});
+
+socket.on('poll-closed', function(data) {
+    currentPoll = null;
+    hasVoted = false;
+    resetPollForm();
+    closePollModal();
+    addChatMessage('Система', '📊 Опрос закрыт', true);
+});
+
 var localStream = null;
 var screenStream = null;
 var peerConnections = {};

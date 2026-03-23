@@ -103,6 +103,78 @@
             display: none;
         }
         
+        /* Whiteboard */
+        .whiteboard-container {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            bottom: 100px;
+            background: #fff;
+            border-radius: 16px;
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .whiteboard-container.active {
+            display: flex;
+        }
+        
+        .whiteboard-toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-radius: 16px 16px 0 0;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .whiteboard-toolbar button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .whiteboard-toolbar .color-btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 50%;
+            border: 2px solid transparent;
+        }
+        
+        .whiteboard-toolbar .color-btn.active {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+        
+        .whiteboard-toolbar .tool-btn {
+            background: #e0e0e0;
+        }
+        
+        .whiteboard-toolbar .tool-btn.active {
+            background: #667eea;
+            color: #fff;
+        }
+        
+        .whiteboard-toolbar .close-btn {
+            margin-left: auto;
+            background: #ff4444;
+            color: #fff;
+        }
+        
+        .whiteboard-canvas {
+            flex: 1;
+            border-radius: 0 0 16px 16px;
+            cursor: crosshair;
+        }
+        
         /* Стили для опросов */
         .poll-option {
             width: 100%;
@@ -587,14 +659,42 @@
     
     <div class="header">
         <a href="/" class="logo">🎥 Meetify</a>
-        <div class="room-info">
-            <span>Комната:</span>
-            <span class="room-id" id="roomIdDisplay">...</span>
-            <button class="copy-btn" onclick="copyRoomId()">📋 Копировать</button>
-            <button class="copy-btn" onclick="showInviteModal()" style="background: #22c55e;">✉️ Пригласить</button>
+        
+        <!-- Название комнаты по центру -->
+        <div style="flex: 1; text-align: center;">
+            <div id="roomTitle" style="font-weight: bold; font-size: 18px; margin-bottom: 4px;"></div>
+            <div id="roomDesc" style="font-size: 12px; color: #888; max-width: 400px; margin: 0 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+        </div>
+        
+        <div class="room-info" style="display: flex; align-items: center; gap: 15px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                <span style="font-size: 11px; color: #666;">ID: <span class="room-id" id="roomIdDisplay">...</span></span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="copy-btn" onclick="copyRoomId()">📋</button>
+                <button class="copy-btn" onclick="showInviteModal()" style="background: #22c55e;">✉️</button>
+            </div>
         </div>
     </div>
     
+    <!-- Whiteboard -->
+    <div class="whiteboard-container" id="whiteboardContainer">
+        <div class="whiteboard-toolbar">
+            <span style="color: #333; font-weight: bold; margin-right: 10px;">🎨 Whiteboard</span>
+            <button class="color-btn active" style="background: #000;" onclick="setPenColor('#000000')" title="Чёрный"></button>
+            <button class="color-btn" style="background: #ff0000;" onclick="setPenColor('#ff0000')" title="Красный"></button>
+            <button class="color-btn" style="background: #00ff00;" onclick="setPenColor('#00ff00')" title="Зелёный"></button>
+            <button class="color-btn" style="background: #0000ff;" onclick="setPenColor('#0000ff')" title="Синий"></button>
+            <button class="color-btn" style="background: #ffff00;" onclick="setPenColor('#ffff00')" title="Жёлтый"></button>
+            <div style="width: 1px; height: 30px; background: #ccc; margin: 0 10px;"></div>
+            <button class="tool-btn active" id="penTool" onclick="setTool('pen')" title="Карандаш">✏️</button>
+            <button class="tool-btn" id="eraserTool" onclick="setTool('eraser')" title="Ластик">🧹</button>
+            <button class="tool-btn" onclick="clearWhiteboard()" title="Очистить">🗑️</button>
+            <button class="close-btn" onclick="toggleWhiteboard()">✕ Закрыть</button>
+        </div>
+        <canvas class="whiteboard-canvas" id="whiteboardCanvas"></canvas>
+    </div>
+
     <div class="main-content">
         <!-- Боковая панель участников -->
         <div class="sidebar" id="participantsSidebar" style="display: none;">
@@ -620,6 +720,7 @@
                 <button class="control-btn" id="recordBtn" onclick="toggleRecording()" data-tooltip="Запись">⏺️</button>
                 <button class="control-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" data-tooltip="Поднять руку">✋</button>
                 <button class="control-btn" id="pollBtn" onclick="openPollModal()" data-tooltip="Опрос">📊</button>
+                <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" data-tooltip="Whiteboard">🎨</button>
                 <button class="control-btn" id="participantsBtn" onclick="toggleParticipants()" data-tooltip="Участники">👥</button>
                 <button class="control-btn" id="chatBtn" onclick="toggleChat()" data-tooltip="Чат">💬</button>
                 <button class="control-btn" id="settingsBtn" onclick="openSettings()" data-tooltip="Настройки">⚙️</button>
