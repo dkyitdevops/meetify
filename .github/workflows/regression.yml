@@ -1,0 +1,49 @@
+name: Regression Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Запуск каждый день в 9:00 UTC
+    - cron: '0 9 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install dependencies
+      run: cd tests && npm install
+    
+    - name: Run regression tests
+      run: cd tests && node regression.test.js
+      env:
+        TEST_URL: https://46-149-68-9.nip.io
+    
+    - name: Run smoke tests
+      run: cd tests && node smoke.test.js
+      env:
+        TEST_URL: https://46-149-68-9.nip.io
+    
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Регрессионные тесты упали',
+            body: `Тесты упали в коммите ${context.sha}. Проверь логи: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            labels: ['bug', 'regression']
+          });
