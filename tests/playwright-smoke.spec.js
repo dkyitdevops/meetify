@@ -22,9 +22,9 @@ test.describe('Meetify Smoke Tests', () => {
     const roomIdInput = page.locator('input#roomId');
     await expect(roomIdInput).toBeVisible();
     
-    // Check for buttons
-    await expect(page.locator('button:has-text("Join")')).toBeVisible();
-    await expect(page.locator('button:has-text("Create")')).toBeVisible();
+    // Check for buttons (Russian text)
+    await expect(page.locator('button:has-text("Присоединиться")')).toBeVisible();
+    await expect(page.locator('button:has-text("Создать комнату")')).toBeVisible();
   });
 
   test('Can enter user name', async ({ page }) => {
@@ -38,8 +38,8 @@ test.describe('Meetify Smoke Tests', () => {
   test('Create room modal opens', async ({ page }) => {
     await page.goto(BASE_URL);
     
-    // Click create room button
-    await page.click('button:has-text("Create room")');
+    // Click create room button (Russian text)
+    await page.click('button:has-text("Создать комнату")');
     
     // Check modal is visible
     const modal = page.locator('#createModal');
