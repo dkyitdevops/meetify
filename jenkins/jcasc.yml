@@ -1,0 +1,27 @@
+jenkins:
+  systemMessage: "Meetify CI/CD Server"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: admin123
+  
+jobs:
+    - script: >
+        pipelineJob('meetify') {
+            description('Meetify CI/CD Pipeline with Allure')
+            definition {
+                cpsScm {
+                    scm {
+                        git {
+                            remote {
+                                url('https://github.com/dkyitdevops/meetify.git')
+                            }
+                            branches('*/main')
+                        }
+                    }
+                    scriptPath('jenkins/Jenkinsfile')
+                }
+            }
+        }

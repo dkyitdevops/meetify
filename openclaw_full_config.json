@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.15",
+    "lastTouchedAt": "2026-02-21T14:51:03.543Z"
+  },
+  "env": {
+    "KIMI_API_KEY": "sk-kimi-Kj8lRNbt5s3cty8zO7DX4EyarARc596lswlQkgFO0vtG2SyBywtA1BjcrzOX0TpT",
+    "KIMI_PLUGIN_API_KEY": "sk-kimi-Kj8lRNbt5s3cty8zO7DX4EyarARc596lswlQkgFO0vtG2SyBywtA1BjcrzOX0TpT"
+  },
+  "wizard": {
+    "lastRunAt": "2026-02-17T12:21:17.053Z",
+    "lastRunVersion": "2026.2.15",
+    "lastRunCommand": "configure",
+    "lastRunMode": "local"
+  },
+  "browser": {
+    "executablePath": "/usr/bin/google-chrome",
+    "headless": true,
+    "noSandbox": true,
+    "defaultProfile": "openclaw"
+  },
+  "auth": {
+    "profiles": {
+      "kimi-coding:default": {
+        "provider": "kimi-coding",
+        "mode": "api_key"
+      }
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "kimi-coding": {
+        "baseUrl": "https://api.kimi.com/coding",
+        "apiKey": "sk-kimi-Kj8lRNbt5s3cty8zO7DX4EyarARc596lswlQkgFO0vtG2SyBywtA1BjcrzOX0TpT",
+        "api": "anthropic-messages",
+        "headers": {
+          "User-Agent": "Kimi Claw Plugin"
+        },
+        "models": [
+          {
+            "id": "k2p5",
+            "name": "k2p5",
+            "contextWindow": 262144,
+            "maxTokens": 32768,
+            "headers": {
+              "User-Agent": "Kimi Claw Plugin"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "kimi-coding/k2p5"
+      },
+      "models": {
+        "kimi-coding/k2p5": {
+          "alias": "Kimi K2.5"
+        }
+      },
+      "workspace": "/root/.openclaw/workspace",
+      "compaction": {
+        "mode": "safeguard"
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "botToken": "8200070228:AAHHUJzrMOORDXOedQjre5AeTtl5j087Pfc",
+      "groups": {
+        "\"*\"": {
+          "requireMention": true
+        }
+      },
+      "groupPolicy": "allowlist",
+      "streamMode": "partial"
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "1effd1dfde29226f11a7f94a6e75e77c25c64ef48e59d3f7"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "nodes": {
+      "denyCommands": [
+        "camera.snap",
+        "camera.clip",
+        "screen.record",
+        "calendar.add",
+        "contacts.add",
+        "reminders.add"
+      ]
+    }
+  },
+  "plugins": {
+    "load": {
+      "paths": [
+        "/root/.openclaw/extensions/kimi-claw"
+      ]
+    },
+    "entries": {
+      "feishu": {
+        "enabled": true
+      },
+      "dingtalk-connector": {
+        "enabled": true
+      },
+      "kimi-claw": {
+        "enabled": true,
+        "config": {
+          "bridge": {
+            "mode": "acp",
+            "url": "wss://www.kimi.com/api-claw/bots/agent-ws",
+            "kimiapiHost": "https://www.kimi.com/api-claw",
+            "instanceId": "connector-iZt4ndmy5gwchzeo29zc1xZ",
+            "deviceId": "iZt4ndmy5gwchzeo29zc1xZ",
+            "historyPendingTimeoutMs": 15000,
+            "shell": {
+              "enabled": true
+            },
+            "bot_type": "remote",
+            "token": "sk-BZSVY2LROHGCEL6IKLO2LXA7RK",
+            "kimiFileDownloadDir": "./openclaw/kimi/downloads",
+            "forwardThinking": false,
+            "forwardToolCalls": false,
+            "promptTimeoutMs": 1800000,
+            "kimiCodeAPIKey": "sk-kimi-Kj8lRNbt5s3cty8zO7DX4EyarARc596lswlQkgFO0vtG2SyBywtA1BjcrzOX0TpT",
+            "kimiPluginAPIKey": "sk-kimi-Kj8lRNbt5s3cty8zO7DX4EyarARc596lswlQkgFO0vtG2SyBywtA1BjcrzOX0TpT",
+            "kimiCodeBaseURL": "https://api.kimi.com/coding"
+          },
+          "gateway": {
+            "url": "ws://127.0.0.1:18789",
+            "agentId": "main",
+            "token": "1effd1dfde29226f11a7f94a6e75e77c25c64ef48e59d3f7"
+          },
+          "retry": {
+            "baseMs": 1000,
+            "maxMs": 600000,
+            "maxAttempts": 0
+          },
+          "log": {
+            "enabled": true,
+            "verbose": false
+          },
+          "defaultModel": {
+            "enabled": true,
+            "provider": "kimi-coding",
+            "modelId": "k2p5",
+            "apiKey": "sk-kimi-Kj8lRNbt5s3cty8zO7DX4EyarARc596lswlQkgFO0vtG2SyBywtA1BjcrzOX0TpT",
+            "baseUrl": "https://api.kimi.com/coding"
+          }
+        }
+      },
+      "kimi-search": {
+        "enabled": true,
+        "config": {
+          "search": {
+            "baseUrl": "https://api.kimi.com/coding/v1/search"
+          },
+          "fetch": {
+            "baseUrl": "https://api.kimi.com/coding/v1/fetch"
+          }
+        }
+      },
+      "telegram": {
+        "enabled": true
+      }
+    },
+    "installs": {
+      "feishu": {
+        "source": "npm",
+        "spec": "@m1heng-clawd/feishu",
+        "installPath": "/root/.openclaw/extensions/feishu",
+        "version": "0.1.10",
+        "installedAt": "2026-02-17T11:48:59.033Z"
+      },
+      "dingtalk-connector": {
+        "source": "npm",
+        "spec": "@dingtalk-real-ai/dingtalk-connector",
+        "installPath": "/root/.openclaw/extensions/dingtalk-connector",
+        "version": "0.6.0",
+        "installedAt": "2026-02-17T11:49:08.961Z"
+      }
+    }
+  }
+}

@@ -66,6 +66,17 @@ async function joinRoom() {
         // Только потом подключаемся к сокету
         socket.emit('join-room', roomId);
         
+<<<<<<< HEAD
+=======
+        // Принудительно показываем чат и контролы (на случай если joined-room не сработает)
+        setTimeout(function() {
+            var chatSection = document.getElementById('chatSection');
+            var controls = document.getElementById('controls');
+            if (chatSection) chatSection.classList.remove('hidden');
+            if (controls) controls.classList.remove('hidden');
+        }, 500);
+        
+>>>>>>> master
     } catch (err) {
         console.error('Error accessing media devices:', err);
         updateStatus('Ошибка доступа к камере/микрофону. Разрешите доступ и попробуйте снова.', 'error');

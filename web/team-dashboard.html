@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetify Team Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .office-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .agent-card {
+            background: rgba(22, 33, 62, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+        
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .agent-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            background: rgba(102, 126, 234, 0.2);
+            border: 3px solid #667eea;
+            position: relative;
+        }
+        
+        .agent-avatar.working {
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .agent-avatar.resting {
+            opacity: 0.7;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .status-indicator {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid #16213e;
+        }
+        
+        .status-indicator.online {
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+        
+        .status-indicator.busy {
+            background: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        
+        .status-indicator.offline {
+            background: #6b7280;
+        }
+        
+        .agent-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+        
+        .agent-role {
+            text-align: center;
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        
+        .activity {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .activity-title {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .activity-text {
+            font-size: 1em;
+            color: #fff;
+            line-height: 1.5;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .scene-emoji {
+            font-size: 2em;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .legend-dot.working { background: #22c55e; }
+        .legend-dot.resting { background: #f59e0b; }
+        .legend-dot.offline { background: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Meetify Team Dashboard</h1>
+        <p>Команда агентов-разработчиков в реальном времени</p>
+    </div>
+    
+    <div class="office-container">
+        <!-- Virtual Background Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar working">
+                🎨
+                <div class="status-indicator online"></div>
+            </div>
+            <div class="agent-name">Virtual BG Agent</div>
+            <div class="agent-role">Frontend Developer</div>
+            <div class="scene-emoji">💻 🖥️ ⌨️</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Интегрирует MediaPipe Selfie Segmentation для размытия фона. Настраивает WebGL шейдеры.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">✅</div>
+                    <div class="stat-label">Готово</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">50s</div>
+                    <div class="stat-label">Время работы</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recording Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar working">
+                🎥
+                <div class="status-indicator online"></div>
+            </div>
+            <div class="agent-name">Recording Agent</div>
+            <div class="agent-role">Fullstack Developer</div>
+            <div class="scene-emoji">🎬 🎙️ 💾</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Настраивает серверное сохранение видео-записей. Canvas capture + Socket.io streaming.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">✅</div>
+                    <div class="stat-label">Готово</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">17m</div>
+                    <div class="stat-label">Время работы</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calendar Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar resting">
+                📅
+                <div class="status-indicator busy"></div>
+            </div>
+            <div class="agent-name">Calendar Agent</div>
+            <div class="agent-role">Integration Specialist</div>
+            <div class="scene-emoji">🛋️ 📖 ☕</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Изучает Google Calendar API. Отдыхает после исследования OAuth 2.0 flow.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">✅</div>
+                    <div class="stat-label">Исследовано</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">55s</div>
+                    <div class="stat-label">Время работы</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tester Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar working">
+                🧪
+                <div class="status-indicator online"></div>
+            </div>
+            <div class="agent-name">Tester Agent</div>
+            <div class="agent-role">QA Engineer</div>
+            <div class="scene-emoji">🔬 🐛 📝</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Пишет автотесты. Нашёл 12 багов! Создаёт отчёты о покрытии кода.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">77</div>
+                    <div class="stat-label">Тестов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Багов</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DevOps Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar working">
+                🚀
+                <div class="status-indicator online"></div>
+            </div>
+            <div class="agent-name">DevOps Agent</div>
+            <div class="agent-role">Infrastructure Engineer</div>
+            <div class="scene-emoji">⚙️ 🐳 📊</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Настраивает CI/CD pipeline. Деплой на сервер + мониторинг Prometheus/Grafana.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">✅</div>
+                    <div class="stat-label">Готово</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">6m</div>
+                    <div class="stat-label">Время работы</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analyst Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar working">
+                📚
+                <div class="status-indicator online"></div>
+            </div>
+            <div class="agent-name">Analyst Agent</div>
+            <div class="agent-role">Technical Writer</div>
+            <div class="scene-emoji">📖 ✍️ 🗂️</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Пишет документацию. Создал TECHNICAL.md, USER_GUIDE.md, API.md, ROADMAP.md</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Документа</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">23KB</div>
+                    <div class="stat-label">Объём</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security Agent -->
+        <div class="agent-card">
+            <div class="agent-avatar working">
+                🔒
+                <div class="status-indicator online"></div>
+            </div>
+            <div class="agent-name">Security Agent</div>
+            <div class="agent-role">Security Engineer</div>
+            <div class="scene-emoji">🔍 🛡️ ⚠️</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Аудит безопасности. Нашёл 18 уязвимостей! 5 критических, 4 высоких приоритета.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">18</div>
+                    <div class="stat-label">Уязвимостей</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Критических</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- KEP TSO Analyst -->
+        <div class="agent-card">
+            <div class="agent-avatar resting">
+                📋
+                <div class="status-indicator busy"></div>
+            </div>
+            <div class="agent-name">КЭП ТСО Analyst</div>
+            <div class="agent-role">Domain Expert</div>
+            <div class="scene-emoji">🪑 📄 🍵</div>
+            <div class="activity">
+                <div class="activity-title">Сейчас делает</div>
+                <div class="activity-text">Ожидает вопросов по КЭП ТСО. Загружено 85 разделов справочника, ТЗ 1.9.</div>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">85</div>
+                    <div class="stat-label">Разделов</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">✅</div>
+                    <div class="stat-label">Готов</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot working"></div>
+                <span>Работает</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot resting"></div>
+                <span>Отдыхает</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot offline"></div>
+                <span>Офлайн</span>
+            </div>
+        </div>
+        <p style="margin-top: 20px;">Всего агентов: 8 | Работают: 5 | Отдыхают: 3</p>
+    </div>
+</body>
+</html>

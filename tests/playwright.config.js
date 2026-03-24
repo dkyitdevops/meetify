@@ -27,7 +27,17 @@ module.exports = defineConfig({
   projects: [
     {
       name: 'chromium',
+<<<<<<< HEAD
       use: { ...devices['Desktop Chrome'] },
+=======
+      use: { 
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          executablePath: '/usr/bin/chromium-browser',
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        }
+      },
+>>>>>>> master
     },
   ],
 });

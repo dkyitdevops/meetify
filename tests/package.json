@@ -1,5 +1,6 @@
 {
   "name": "meetify-tests",
+<<<<<<< HEAD
   "version": "1.0.0",
   "description": "E2E tests for Meetify with Allure",
   "scripts": {
@@ -14,4 +15,48 @@
   "devDependencies": {
     "allure-commandline": "^2.24.1"
   }
+=======
+  "version": "2.0.0",
+  "description": "Comprehensive test suite for Meetify video conferencing app",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:unit": "node --test unit.test.js",
+    "test:integration": "node --test integration.test.js",
+    "test:bugs": "node --test bugs.test.js",
+    "test:e2e": "npx playwright test e2e-comprehensive.spec.js",
+    "test:all": "node test-runner.js all",
+    "test:coverage": "npx c8 node --test unit.test.js integration.test.js bugs.test.js",
+    "test:smoke": "node smoke.test.js",
+    "test:regression": "node regression.test.js",
+    "playwright:ui": "npx playwright test --ui",
+    "playwright:debug": "npx playwright test --debug",
+    "playwright:report": "npx playwright show-report",
+    "lint": "eslint *.js",
+    "format": "prettier --write *.js *.md"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.58.2",
+    "allure-js-commons": "^2.9.2",
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {
+    "allure-commandline": "^2.24.1",
+    "c8": "^8.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "socket.io-client": "^4.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "meetify",
+    "testing",
+    "e2e",
+    "webrtc",
+    "video-conferencing"
+  ],
+  "author": "Meetify Team",
+  "license": "MIT"
+>>>>>>> master
 }

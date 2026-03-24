@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: CI/CD Pipeline with Allure
 
 on:
@@ -72,3 +73,22 @@ jobs:
           git pull origin main
           docker compose up -d --build
           docker compose ps
+=======
+# DEPRECATED: Use ci-cd.yml instead
+# This file is kept for backward compatibility
+# Please migrate to the new workflow: .github/workflows/ci-cd.yml
+
+name: CI/CD Pipeline with Allure (Legacy)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Info
+      run: |
+        echo "This workflow is deprecated. Please use ci-cd.yml instead."
+        echo "See DEPLOYMENT.md for details."
+>>>>>>> master

@@ -55,7 +55,13 @@ const TESTS = {
                js.includes('function createPoll') &&
                js.includes('function votePoll') &&
                js.includes("socket.on('poll-created'") &&
+<<<<<<< HEAD
                js.includes("socket.on('poll-updated'");
+=======
+               js.includes("socket.on('poll-updated'") &&
+               js.includes("openPollModal()") && // Открытие при получении опроса
+               js.includes("pollQuestion').value = ''"); // Очистка формы
+>>>>>>> master
     },
     
     'Server poll handlers exist': async () => {

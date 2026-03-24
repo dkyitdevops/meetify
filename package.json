@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "socket.io-client": "^4.8.3"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}
