@@ -2,15 +2,15 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: 'playwright.spec.js',
+  testMatch: '*.spec.js',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
-  timeout: 120000, // Increased timeout
+  timeout: 120000,
   expect: {
-    timeout: 30000 // Increased expect timeout
+    timeout: 30000
   },
   use: {
     baseURL: 'https://46-149-68-9.nip.io',
