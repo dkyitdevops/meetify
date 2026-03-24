@@ -1,0 +1,142 @@
+name: Regression Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Запуск каждый день в 9:00 UTC
+    - cron: '0 9 * * *'
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Security - Check for secrets in code
+      run: |
+        echo "🔍 Checking for potential secrets..."
+        # Check for common secret patterns
+        if grep -r -i "password.*=" web/ --include="*.js" | grep -v "placeholder\|example\|test" | head -5; then
+          echo "⚠️  Potential hardcoded password found"
+          exit 1
+        fi
+        if grep -r -E "(api[_-]?key|secret[_-]?key|token).*=[\"'][^\"']{10,}[\"']" web/ --include="*.js" | grep -v "process.env"; then
+          echo "⚠️  Potential hardcoded secret found"
+          exit 1
+        fi
+        echo "✅ No obvious secrets found"
+    
+    - name: Security - Check for eval and dangerous functions
+      run: |
+        echo "🔍 Checking for dangerous functions..."
+        if grep -r "eval(" web/ --include="*.js"; then
+          echo "❌ Found eval() usage - security risk"
+          exit 1
+        fi
+        if grep -r "innerHTML.*=" web/ --include="*.js" | grep -v "// safe\|sanitized"; then
+          echo "⚠️  Found innerHTML assignment - potential XSS"
+        fi
+        echo "✅ Dangerous functions check complete"
+    
+    - name: Security - Check for insecure dependencies
+      run: |
+        cd api && npm audit --audit-level=high || true
+        echo "⚠️  Run 'npm audit fix' if vulnerabilities found above"
+  
+  test:
+    runs-on: ubuntu-latest
+    needs: security-scan
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install dependencies
+      run: cd tests && npm install
+    
+    - name: Static analysis - Check HTML syntax
+      run: |
+        node -e "
+        const fs = require('fs');
+        const path = require('path');
+        
+        function checkHTML(filePath) {
+          const content = fs.readFileSync(filePath, 'utf8');
+          const errors = [];
+          
+          // Check for unclosed tags
+          const lines = content.split('\n');
+          lines.forEach((line, idx) => {
+            // Check for broken tag syntax
+            if (/\u003c[a-zA-Z][^\u003e]*[^\/\u003e\s]$/.test(line.trim()) && !line.includes('//')) {
+              errors.push(\`Line \${idx + 1}: Possible unclosed tag\`);
+            }
+            // Check for duplicate closing braces
+            if (line.includes('}}')) {
+              errors.push(\`Line \${idx + 1}: Duplicate closing braces\`);
+            }
+          });
+          
+          return errors;
+        }
+        
+        const webDir = './web';
+        const files = fs.readdirSync(webDir).filter(f => f.endsWith('.html'));
+        let hasErrors = false;
+        
+        files.forEach(file => {
+          const errors = checkHTML(path.join(webDir, file));
+          if (errors.length > 0) {
+            console.log(\`❌ \${file}:\`);
+            errors.forEach(e => console.log('  ', e));
+            hasErrors = true;
+          } else {
+            console.log(\`✅ \${file} - OK\`);
+          }
+        });
+        
+        if (hasErrors) process.exit(1);
+        "
+    
+    - name: Static analysis - Check JS syntax
+      run: |
+        node --check web/room.js
+        echo "✅ room.js syntax OK"
+    
+    - name: Run regression tests
+      run: cd tests && node regression.test.js
+      env:
+        TEST_URL: https://46-149-68-9.nip.io
+    
+    - name: Run smoke tests
+      run: cd tests && node smoke.test.js
+      env:
+        TEST_URL: https://46-149-68-9.nip.io
+    
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Регрессионные тесты упали',
+            body: `Тесты упали в коммите ${context.sha}. Проверь логи: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            labels: ['bug', 'regression']
+          });

@@ -1,0 +1,45 @@
+name: UI Tests v2
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  ui-test:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    
+    - name: Install Playwright dependencies
+      run: |
+        cd tests
+        npm install @playwright/test
+        npm install
+    
+    - name: Install Chromium
+      run: |
+        cd tests
+        ./node_modules/.bin/playwright install chromium
+    
+    - name: Run UI smoke tests
+      run: |
+        cd tests
+        ./node_modules/.bin/playwright test playwright-smoke.spec.js --reporter=list
+      env:
+        CI: true
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ui-test-results
+        path: tests/playwright-report/
+        retention-days: 7

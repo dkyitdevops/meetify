@@ -1,0 +1,50 @@
+services:
+  web:
+    image: ghcr.io/nginx/nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/nodejs/node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./api:/app
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/meetify
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    command: sh -c "npm install && npm start"
+    restart: unless-stopped
+
+  db:
+    image: ghcr.io/postgres/postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=meetify
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: ghcr.io/redis/redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

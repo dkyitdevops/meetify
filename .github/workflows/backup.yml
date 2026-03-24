@@ -1,0 +1,80 @@
+name: Nightly Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Every day at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Run backup on server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: 46.149.68.9
+        username: deploy
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          set -e
+          cd /opt/meetify
+          
+          # Create backup directory
+          BACKUP_DIR="/opt/backups/meetify/$(date +%Y%m%d_%H%M%S)"
+          mkdir -p "$BACKUP_DIR"
+          
+          # Backup database
+          docker exec meetify-db-1 pg_dump -U postgres meetify > "$BACKUP_DIR/database.sql"
+          
+          # Backup Redis
+          docker exec meetify-redis-1 redis-cli BGSAVE
+          sleep 2
+          docker cp meetify-redis-1:/data/dump.rdb "$BACKUP_DIR/redis.rdb"
+          
+          # Backup uploads/configs
+          tar -czf "$BACKUP_DIR/configs.tar.gz" -C /opt/meetify docker-compose.prod.yml nginx.conf .env
+          
+          # Compress
+          tar -czf "$BACKUP_DIR.tar.gz" -C "$BACKUP_DIR" .
+          rm -rf "$BACKUP_DIR"
+          
+          # Upload to S3 (if configured)
+          if [ -f /opt/meetify/scripts/upload-to-s3.sh ]; then
+            /opt/meetify/scripts/upload-to-s3.sh "$BACKUP_DIR.tar.gz"
+          fi
+          
+          # Cleanup old backups (keep 14 days)
+          find /opt/backups/meetify -name "*.tar.gz" -mtime +14 -delete
+          
+          echo "✅ Backup completed: $BACKUP_DIR.tar.gz"
+    
+    - name: Verify backup
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: 46.149.68.9
+        username: deploy
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          LATEST=$(ls -t /opt/backups/meetify/*.tar.gz | head -1)
+          SIZE=$(stat -f%z "$LATEST" 2>/dev/null || stat -c%s "$LATEST")
+          echo "Latest backup: $LATEST ($(numfmt --to=iec $SIZE))"
+          
+          if [ "$SIZE" -lt 1000 ]; then
+            echo "❌ Backup file too small!"
+            exit 1
+          fi
+          
+          echo "✅ Backup verification passed"
+    
+    - name: Notify on failure
+      if: failure()
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        payload: |
+          {
+            "text": "⚠️ Meetify backup failed!"
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
