@@ -1,0 +1,3017 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>AI Team Office - Визуализация команды</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="animations.css?v=3">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-panel: #12121a;
+            --bg-card: #1a1a25;
+            --border: #2a2a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #8b8b9e;
+            --neon-blue: #00d4ff;
+            --neon-purple: #a855f7;
+            --neon-green: #22c55e;
+            --neon-orange: #f59e0b;
+            --neon-pink: #ec4899;
+            --screen-glow: rgba(0, 212, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 20px 40px;
+            background: linear-gradient(180deg, rgba(10,10,15,0.95) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.resting {
+            background: var(--neon-orange);
+            box-shadow: 0 0 10px var(--neon-orange);
+        }
+
+        .status-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .office-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .office-title {
+            text-align: center;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .office-title h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .office-title p {
+            color: var(--text-secondary);
+        }
+
+        .floor-plan {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        .work-area {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.2s forwards;
+        }
+
+        .work-area::before {
+            content: '💻 РАБОЧАЯ ЗОНА';
+            position: absolute;
+            top: -12px;
+            left: 30px;
+            background: var(--bg-dark);
+            padding: 0 15px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+        }
+
+        .desks-layout {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            padding: 20px 0;
+        }
+
+        .desk-station {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            opacity: 0;
+            animation: fadeInScale 0.6s ease forwards;
+        }
+
+        .desk-station:nth-child(1) { animation-delay: 0.1s; }
+        .desk-station:nth-child(2) { animation-delay: 0.2s; }
+        .desk-station:nth-child(3) { animation-delay: 0.3s; }
+        .desk-station:nth-child(4) { animation-delay: 0.4s; }
+        .desk-station:nth-child(5) { animation-delay: 0.5s; }
+        .desk-station:nth-child(6) { animation-delay: 0.6s; }
+
+        .desk-station:hover {
+            transform: translateY(-5px);
+        }
+
+        .desk-station:hover .agent-emoji {
+            transform: scale(1.1);
+        }
+
+        .computer-setup {
+            position: relative;
+            width: 140px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .monitor {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 65px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+            border: 2px solid #2a2a3a;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 
+                0 0 30px var(--screen-glow),
+                inset 0 0 20px rgba(0, 212, 255, 0.1);
+        }
+
+        .monitor::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: linear-gradient(180deg, 
+                rgba(0, 212, 255, 0.2) 0%, 
+                rgba(0, 212, 255, 0.05) 100%);
+            border-radius: 4px;
+            animation: screenFlicker 4s infinite;
+        }
+
+        .monitor::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 60%;
+            height: 3px;
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 2px;
+            box-shadow: 0 10px 0 rgba(0, 212, 255, 0.3),
+                        0 20px 0 rgba(0, 212, 255, 0.2);
+            animation: codeTyping 2s infinite;
+        }
+
+        .screen-content {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .screen-project {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #00ff88;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.9), 0 0 20px rgba(0, 255, 136, 0.5);
+            animation: projectGlow 2s ease-in-out infinite;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .screen-task {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: #88ffcc;
+            text-align: center;
+            margin-top: 3px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            text-shadow: 0 0 5px rgba(136, 255, 204, 0.5);
+        }
+
+        .screen-code-line {
+            position: absolute;
+            bottom: 4px;
+            left: 6px;
+            right: 6px;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(0, 212, 255, 0.4) 30%, 
+                rgba(0, 212, 255, 0.8) 50%, 
+                rgba(0, 212, 255, 0.4) 70%, 
+                transparent 100%);
+            animation: codeScan 2s linear infinite;
+        }
+
+        @keyframes projectGlow {
+            0%, 100% { 
+                text-shadow: 0 0 10px rgba(0, 255, 136, 0.9), 0 0 20px rgba(0, 255, 136, 0.5);
+                opacity: 0.95;
+            }
+            50% { 
+                text-shadow: 0 0 15px rgba(0, 255, 136, 1), 0 0 30px rgba(0, 255, 136, 0.7);
+                opacity: 1;
+            }
+        }
+
+        @keyframes codeScan {
+            0% { transform: translateX(-100%); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+
+        .monitor-stand {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 15px;
+            background: #2a2a3a;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .monitor-base {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 8px;
+            background: #2a2a3a;
+            border-radius: 4px;
+        }
+
+        .desk-surface {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 15px;
+            background: linear-gradient(180deg, #2a2a3a 0%, #1a1a25 100%);
+            border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .keyboard {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 8px;
+            background: #1a1a25;
+            border: 1px solid #3a3a4a;
+            border-radius: 3px;
+        }
+
+        .keyboard::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            right: 5px;
+            height: 2px;
+            background: repeating-linear-gradient(
+                90deg,
+                #4a4a5a 0px,
+                #4a4a5a 3px,
+                transparent 3px,
+                transparent 5px
+            );
+        }
+
+        .mouse {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            width: 12px;
+            height: 18px;
+            background: #1a1a25;
+            border: 1px solid #3a3a4a;
+            border-radius: 6px;
+        }
+
+        .cable {
+            position: absolute;
+            bottom: 15px;
+            width: 2px;
+            height: 30px;
+            background: #1a1a25;
+            opacity: 0.5;
+        }
+
+        .cable-left { left: 30px; }
+        .cable-right { right: 30px; }
+
+        .agent-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -10px;
+        }
+
+        .agent-emoji {
+            font-size: 42px;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+            animation: agentIdle 3s ease-in-out infinite;
+        }
+
+        .rest-agent-emoji {
+            font-size: 42px;
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+        }
+
+        .lounge-person {
+            font-size: 42px;
+        }
+
+        .agent-emoji.typing {
+            animation: agentTyping 0.5s ease-in-out infinite;
+        }
+
+        .agent-status-ring {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            width: 16px;
+            height: 16px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            border: 3px solid var(--bg-panel);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: statusPulse 2s infinite, pulse 2s infinite;
+        }
+
+        .agent-status-ring.resting {
+            background: var(--neon-orange);
+            box-shadow: 0 0 10px var(--neon-orange);
+        }
+
+        .agent-info {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .agent-role {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .rest-room {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.4s forwards;
+        }
+
+        .rest-room::before {
+            content: '🌴 КОМНАТА ОТДЫХА';
+            position: absolute;
+            top: -12px;
+            left: 30px;
+            background: var(--bg-dark);
+            padding: 0 15px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--neon-orange);
+            letter-spacing: 2px;
+        }
+
+        .rest-room-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            height: 100%;
+        }
+
+        .lounge-area {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(234, 179, 8, 0.05));
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            min-height: 140px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeInScale 0.6s ease 0.5s forwards;
+        }
+
+        .lounge-scene {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .lounge-furniture {
+            font-size: 70px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+            line-height: 1;
+        }
+
+        .lounge-person {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3));
+            animation: loungeSleep 3s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        .rest-status-ring {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 14px;
+            height: 14px;
+            background: var(--neon-orange);
+            border-radius: 50%;
+            border: 3px solid var(--bg-panel);
+            box-shadow: 0 0 10px var(--neon-orange);
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes loungeSleep {
+            0%, 100% { transform: translateX(-50%) scale(1) rotate(0deg); }
+            25% { transform: translateX(-50%) scale(1.05) rotate(-3deg); }
+            50% { transform: translateX(-50%) scale(1) rotate(0deg); }
+            75% { transform: translateX(-50%) scale(1.05) rotate(3deg); }
+        }
+
+        .lounge-info {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            min-width: 160px;
+        }
+
+        .lounge-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neon-orange);
+            white-space: nowrap;
+        }
+
+        .lounge-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .lounge-label {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 11px;
+            color: var(--neon-orange);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .door-frame {
+            position: absolute;
+            top: 50%;
+            left: -1px;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 80px;
+            background: linear-gradient(180deg, var(--neon-orange), var(--neon-orange));
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        }
+
+        .door-label {
+            position: absolute;
+            top: 50%;
+            left: -25px;
+            transform: translateY(-50%) rotate(-90deg);
+            font-size: 10px;
+            color: var(--neon-orange);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.8s forwards;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.working {
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        .legend-dot.resting {
+            background: var(--neon-orange);
+            box-shadow: 0 0 10px var(--neon-orange);
+        }
+
+        .copyright {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.6;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes screenFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
+            52% { opacity: 0.7; }
+            54% { opacity: 1; }
+        }
+
+        @keyframes codeTyping {
+            0%, 100% { width: 60%; }
+            50% { width: 80%; }
+        }
+
+        @keyframes agentIdle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes agentTyping {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-2px) rotate(2deg); }
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes agentExit {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: translateY(-20px) scale(0.9);
+            }
+            100% {
+                opacity: 0.3;
+                transform: translateY(-40px) scale(0.8);
+            }
+        }
+
+        @keyframes agentEnter {
+            0% {
+                opacity: 0.3;
+                transform: translateY(-40px) scale(0.8);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateY(-10px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes restAgentEnter {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes restAgentExit {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        .desk-station.agent-leaving {
+            filter: grayscale(0.3);
+        }
+
+        .desk-station.agent-entering {
+            animation: deskHighlight 0.8s ease;
+        }
+
+        @keyframes deskHighlight {
+            0%, 100% {
+                box-shadow: none;
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+            }
+        }
+
+        .rest-agent {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(234, 179, 8, 0.05));
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .rest-agent-avatar {
+            position: relative;
+            font-size: 32px;
+        }
+
+        .rest-agent-emoji {
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+        }
+
+        .rest-agent-info {
+            flex: 1;
+        }
+
+        .rest-agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neon-orange);
+        }
+
+        .rest-agent-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 1024px) {
+            .floor-plan {
+                grid-template-columns: 1fr;
+            }
+
+            .desks-layout {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .rest-room {
+                order: -1;
+            }
+
+            .chat-container {
+                width: 340px;
+                height: 450px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .logo-text {
+                font-size: 20px;
+            }
+
+            .status-bar {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 12px;
+            }
+
+            .status-item {
+                padding: 10px 16px;
+                min-width: 80px;
+            }
+
+            .status-value {
+                font-size: 18px;
+            }
+
+            .office-container {
+                padding: 20px;
+            }
+
+            .office-title h1 {
+                font-size: 24px;
+            }
+
+            .office-title p {
+                font-size: 14px;
+            }
+
+            .work-area {
+                padding: 20px;
+            }
+
+            .desks-layout {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .computer-setup {
+                transform: scale(0.9);
+            }
+
+            .chat-widget {
+                bottom: 20px;
+                right: 20px;
+            }
+
+            .chat-container {
+                position: fixed;
+                bottom: 90px;
+                right: 20px;
+                width: calc(100vw - 40px);
+                max-width: 380px;
+                height: 60vh;
+                max-height: 450px;
+            }
+
+            .chat-toggle {
+                width: 56px;
+                height: 56px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .chat-send {
+                width: 48px;
+                height: 48px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .modal {
+                width: 95%;
+                max-width: 500px;
+                max-height: 85vh;
+                margin: 20px;
+            }
+
+            .modal-body {
+                max-height: calc(85vh - 100px);
+            }
+
+            .modal-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+            }
+
+            .modal-stat {
+                padding: 12px;
+            }
+
+            .modal-stat-value {
+                font-size: 20px;
+            }
+
+            .modal-close {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .chat-close {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            /* Remote work section mobile */
+            .remote-work-section {
+                margin-top: 20px;
+                padding: 15px;
+            }
+
+            .remote-work-section::before {
+                font-size: 10px;
+                left: 15px;
+            }
+
+            .remote-agents {
+                flex-direction: column;
+            }
+
+            .remote-agent-card {
+                width: 100%;
+            }
+
+            .remote-agent-avatar {
+                font-size: 36px;
+            }
+
+            .remote-agent-emoji {
+                font-size: 36px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .logo-icon {
+                font-size: 28px;
+            }
+
+            .logo-text {
+                font-size: 18px;
+            }
+
+            .status-bar {
+                gap: 8px;
+            }
+
+            .status-item {
+                padding: 8px 12px;
+                min-width: 70px;
+            }
+
+            .status-value {
+                font-size: 16px;
+            }
+
+            .status-label {
+                font-size: 10px;
+            }
+
+            .office-container {
+                padding: 16px;
+            }
+
+            .office-title {
+                margin-bottom: 24px;
+            }
+
+            .office-title h1 {
+                font-size: 20px;
+            }
+
+            .office-title p {
+                font-size: 13px;
+            }
+
+            .work-area {
+                padding: 16px;
+                border-radius: 16px;
+            }
+
+            .work-area::before {
+                font-size: 10px;
+                left: 20px;
+            }
+
+            .desks-layout {
+                gap: 24px;
+                padding: 10px 0;
+            }
+
+            .computer-setup {
+                transform: scale(0.85);
+            }
+
+            .agent-name {
+                font-size: 13px;
+            }
+
+            .agent-role {
+                font-size: 10px;
+            }
+
+            .agent-emoji {
+                font-size: 40px;
+            }
+
+            .rest-room {
+                padding: 20px;
+            }
+
+            .rest-room::before {
+                font-size: 10px;
+                left: 20px;
+            }
+
+            .lounge-area {
+                min-height: 120px;
+                padding: 16px;
+            }
+
+            .lounge-furniture {
+                font-size: 56px;
+            }
+
+            .lounge-person {
+                font-size: 32px;
+            }
+
+            .lounge-info {
+                min-width: 140px;
+                padding: 8px 12px;
+            }
+
+            .lounge-name {
+                font-size: 12px;
+            }
+
+            .lounge-status {
+                font-size: 11px;
+            }
+
+            .chat-widget {
+                bottom: 16px;
+                right: 16px;
+            }
+
+            .chat-container {
+                position: fixed;
+                bottom: 80px;
+                right: 16px;
+                left: 16px;
+                width: auto;
+                max-width: none;
+                height: 65vh;
+                max-height: 400px;
+                border-radius: 16px;
+            }
+
+            .chat-toggle {
+                width: 52px;
+                height: 52px;
+                min-width: 44px;
+                min-height: 44px;
+                font-size: 20px;
+            }
+
+            .chat-header {
+                padding: 12px 16px;
+            }
+
+            .chat-messages {
+                padding: 16px;
+            }
+
+            .chat-message-bubble {
+                padding: 10px 14px;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+
+            .chat-message-avatar {
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+                min-height: 36px;
+                font-size: 16px;
+            }
+
+            .chat-input-area {
+                padding: 12px 16px;
+            }
+
+            .chat-input {
+                padding: 12px 16px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+
+            .chat-send {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .modal {
+                width: 100%;
+                max-width: none;
+                max-height: 90vh;
+                margin: 0;
+                border-radius: 20px 20px 0 0;
+                transform: translateY(100%);
+            }
+
+            .modal-overlay.active .modal {
+                transform: translateY(0);
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-agent-avatar {
+                font-size: 40px;
+            }
+
+            .modal-agent-details h2 {
+                font-size: 18px;
+            }
+
+            .modal-agent-details p {
+                font-size: 13px;
+            }
+
+            .modal-body {
+                padding: 20px;
+                max-height: calc(90vh - 80px);
+            }
+
+            .modal-section {
+                margin-bottom: 20px;
+            }
+
+            .modal-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .modal-stat {
+                padding: 12px 8px;
+            }
+
+            .modal-stat-value {
+                font-size: 18px;
+            }
+
+            .modal-stat-label {
+                font-size: 10px;
+            }
+
+            .modal-task-card {
+                padding: 14px;
+            }
+
+            .modal-task-name {
+                font-size: 14px;
+            }
+
+            .modal-close {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .footer {
+                padding: 20px;
+                margin-top: 24px;
+            }
+
+            .legend {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .copyright {
+                font-size: 12px;
+            }
+
+            .desk-station {
+                min-height: 44px;
+            }
+
+            .modal-skill {
+                padding: 8px 14px;
+                min-height: 32px;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .chat-message-bubble {
+                line-height: 1.5;
+            }
+
+            .tooltip-task {
+                font-size: 13px;
+                line-height: 1.5;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .chat-container {
+                height: 60vh;
+                max-height: 350px;
+            }
+
+            .modal-stats {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .modal-stat {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                text-align: left;
+                padding: 12px 16px;
+            }
+
+            .modal-stat-value {
+                font-size: 16px;
+            }
+
+            .modal-stat-label {
+                font-size: 12px;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .status-item {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+            }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .chat-container {
+                height: 80vh;
+                max-height: 300px;
+            }
+
+            .modal {
+                max-height: 95vh;
+            }
+
+            .modal-body {
+                max-height: calc(95vh - 80px);
+            }
+        }
+
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            body {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+
+            .agent-name,
+            .lounge-name {
+                font-weight: 500;
+            }
+
+            .chat-message-bubble {
+                line-height: 1.6;
+            }
+        }
+
+        .desk-station::after {
+            display: none;
+        }
+
+        .agent-task-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 220px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Remote Work Section */
+        .remote-work-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.05));
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 16px;
+            position: relative;
+        }
+
+        .remote-work-section::before {
+            content: '🌐 УДАЛЁННАЯ РАБОТА';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--bg-dark);
+            padding: 0 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neon-purple);
+            letter-spacing: 1.5px;
+        }
+
+        .remote-work-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-left: 5px;
+        }
+
+        .remote-work-icon {
+            font-size: 24px;
+        }
+
+        .remote-work-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neon-purple);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .remote-agents {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .remote-agent-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .remote-agent-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--neon-purple);
+            box-shadow: 0 5px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .remote-agent-avatar {
+            position: relative;
+            font-size: 42px;
+        }
+
+        .remote-agent-emoji {
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+        }
+
+        .remote-agent-status {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 14px;
+            height: 14px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            border: 2px solid var(--bg-card);
+            box-shadow: 0 0 8px var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        .remote-agent-status.resting {
+            background: var(--neon-orange);
+            box-shadow: 0 0 8px var(--neon-orange);
+            animation: none;
+        }
+
+        .remote-agent-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .remote-agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .remote-agent-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .remote-agent-task {
+            font-size: 11px;
+            color: var(--neon-purple);
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Tooltip for remote agents */
+        .remote-agent-card .agent-task-tooltip {
+            bottom: auto;
+            top: 100%;
+            transform: translateX(-50%) translateY(10px);
+            margin-top: 10px;
+        }
+
+        .remote-agent-card .agent-task-tooltip::after {
+            top: auto;
+            bottom: 100%;
+            border-top-color: transparent;
+            border-bottom-color: var(--bg-card);
+        }
+
+        .remote-agent-card:hover .agent-task-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(5px);
+        }
+
+        .agent-task-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--bg-card);
+        }
+
+        .desk-station:hover .agent-task-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        .tooltip-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tooltip-task {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .tooltip-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-issues {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            pointer-events: auto;
+        }
+
+        .agent-issues-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .agent-issues-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .agent-issues-list a {
+            display: block;
+            font-size: 12px;
+            color: var(--text-primary);
+            text-decoration: underline;
+            padding: 6px 8px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            line-height: 1.4;
+        }
+
+        .agent-issues-list a:hover {
+            background: var(--border);
+            color: var(--neon-blue);
+        }
+
+        .agent-issues-list a .issue-status-open {
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--neon-green);
+            min-width: 35px;
+            text-align: right;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), transparent);
+        }
+
+        .modal-agent-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .modal-agent-avatar {
+            font-size: 48px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+        }
+
+        .modal-agent-details h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .modal-agent-details p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: calc(90vh - 100px);
+            overflow-y: auto;
+        }
+
+        .modal-section {
+            margin-bottom: 24px;
+        }
+
+        .modal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .modal-task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: grab;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .modal-task-card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        .modal-task-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+            transform: scale(1.02);
+        }
+
+        .modal-task-card.drag-over {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+
+        .modal-task-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .modal-task-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-task-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .modal-task-status.in-progress {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--neon-blue);
+        }
+
+        .modal-task-status.pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--neon-orange);
+        }
+
+        .modal-task-status.completed {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--neon-green);
+        }
+
+        .modal-task-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-task-progress-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .modal-task-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .modal-task-progress-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neon-green);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .modal-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .modal-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .modal-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--neon-blue);
+            margin-bottom: 4px;
+        }
+
+        .modal-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .modal-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .modal-skill {
+            padding: 6px 14px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .modal-loader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .modal-loader-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--neon-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .issue-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .issue-badge.open {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--neon-green);
+        }
+
+        .issue-badge.closed {
+            background: rgba(139, 139, 158, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .issue-link {
+            color: var(--neon-blue);
+            text-decoration: none;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .issue-link:hover {
+            text-decoration: underline;
+        }
+
+        .issue-item {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .issue-title {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+        }
+
+        .chat-toggle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 5px 30px rgba(0, 212, 255, 0.4);
+            transition: all 0.3s ease;
+            animation: chatPulse 2s infinite;
+        }
+
+        @keyframes chatPulse {
+            0%, 100% { box-shadow: 0 5px 30px rgba(0, 212, 255, 0.4); }
+            50% { box-shadow: 0 5px 40px rgba(0, 212, 255, 0.6); }
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .chat-container {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 500px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-container.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), transparent);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-title-icon {
+            font-size: 20px;
+        }
+
+        .chat-title-text {
+            font-weight: 600;
+        }
+
+        .chat-title-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--neon-green);
+        }
+
+        .chat-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        .chat-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        *:focus-visible {
+            outline: 3px solid var(--neon-blue);
+            outline-offset: 2px;
+        }
+
+        .desk-station:focus-visible {
+            outline: 3px solid var(--neon-blue);
+            outline-offset: 4px;
+            border-radius: 8px;
+        }
+
+        .chat-toggle:focus-visible,
+        .chat-send:focus-visible,
+        .modal-close:focus-visible,
+        .chat-close:focus-visible {
+            outline: 3px solid var(--neon-blue);
+            outline-offset: 3px;
+        }
+
+        .chat-input:focus-visible {
+            outline: 2px solid var(--neon-blue);
+            outline-offset: 0;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-task-card:focus-visible {
+            outline: 2px solid var(--neon-green);
+            outline-offset: 2px;
+        }
+
+        .lounge-area:focus-visible {
+            outline: 3px solid var(--neon-orange);
+            outline-offset: 4px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--neon-blue);
+            color: var(--bg-dark);
+            padding: 8px 16px;
+            font-weight: 600;
+            z-index: 10000;
+            transition: top 0.3s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        .chat-messages {
+            height: calc(100% - 140px);
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .chat-message.own {
+            flex-direction: row-reverse;
+        }
+
+        .chat-message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .chat-message-content {
+            max-width: 70%;
+        }
+
+        .chat-message-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-message.own .chat-message-bubble {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(168, 85, 247, 0.1));
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .chat-message-name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            padding: 0 4px;
+        }
+
+        .chat-message.own .chat-message-name {
+            text-align: right;
+        }
+
+        .chat-message-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .chat-message.own .chat-message-time {
+            text-align: right;
+        }
+
+        .chat-input-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 12px 20px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .chat-input:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .chat-send {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .chat-send:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--neon-green);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .agent-role,
+        .lounge-status,
+        .chat-message-name,
+        .chat-message-time {
+            color: #a0a0b5;
+        }
+
+        .status-label,
+        .legend-item,
+        .copyright,
+        .tooltip-task,
+        .modal-section-title {
+            color: #9a9aaf;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Issues list styles */
+        .issues-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .issue-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .issue-item:hover {
+            border-color: var(--neon-blue);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .issue-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--neon-blue);
+            font-weight: 600;
+        }
+
+        .issue-title-text {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .issue-state {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .issue-state.open {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--neon-green);
+        }
+
+        .issue-state.closed {
+            background: rgba(139, 139, 158, 0.2);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Перейти к основному содержимому</a>
+    
+    <header class="header" role="banner">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🏢</span>
+                <span class="logo-text">AI Team Office</span>
+            </div>
+            <div class="status-bar" role="region" aria-label="Статистика команды">
+                <div class="status-item">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <div>
+                        <div class="status-value" id="totalCount">0</div>
+                        <div class="status-label">Всего</div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <div>
+                        <div class="status-value" id="workingCount">0</div>
+                        <div class="status-label">Работают</div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot resting" aria-hidden="true"></span>
+                    <div>
+                        <div class="status-value" id="restingCount">0</div>
+                        <div class="status-label">Отдыхают</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="office-container" id="main-content" role="main">
+        <div class="office-title">
+            <h1>👥 Наша команда</h1>
+            <p>Визуализация AI-агентов в реальном времени</p>
+        </div>
+
+        <div class="floor-plan">
+            <!-- Work Area -->
+            <div class="work-area">
+                <div class="desks-layout" id="workArea">
+                    <!-- Desks will be populated by JavaScript -->
+                </div>
+                
+                <!-- Remote Work Section -->
+                <div class="remote-work-section" id="remoteWorkSection">
+                    <div class="remote-work-header">
+                        <span class="remote-work-icon">🌐</span>
+                        <span class="remote-work-title">Удалённая работа</span>
+                    </div>
+                    <div class="remote-agents" id="remoteAgents">
+                        <!-- Remote agents will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rest Room -->
+            <div class="rest-room">
+                <div class="door-frame"></div>
+                <span class="door-label">ВХОД</span>
+                
+                <div class="rest-room-content" id="restRoom">
+                    <!-- Resting agents will be populated here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+        <div class="legend" role="region" aria-label="Легенда статусов">
+            <div class="legend-item">
+                <span class="legend-dot working" aria-hidden="true"></span>
+                <span>Работает</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot resting" aria-hidden="true"></span>
+                <span>Отдыхает</span>
+            </div>
+        </div>
+        <p class="copyright">AI Team Office © 2026</p>
+    </footer>
+
+    <div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="agentModal" role="dialog" aria-modal="true" aria-labelledby="modalName">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-agent-info">
+                    <div class="modal-agent-avatar" id="modalAvatar">👨‍🎨</div>
+                    <div class="modal-agent-details">
+                        <h2 id="modalName">Алексей</h2>
+                        <p id="modalRole">UI Designer</p>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeModal()" aria-label="Закрыть модальное окно">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Current Task with Progress -->
+                <div class="modal-section" id="modalCurrentTaskSection">
+                    <div class="modal-section-title">Текущая задача</div>
+                    <div class="modal-task-card">
+                        <div class="modal-task-header">
+                            <span class="modal-task-name" id="modalCurrentTaskName">-</span>
+                            <span class="modal-task-status in-progress" id="modalCurrentTaskStatus">В работе</span>
+                        </div>
+                        <div class="modal-task-progress">
+                            <div class="modal-task-progress-bar">
+                                <div class="modal-task-progress-fill" id="modalCurrentTaskProgress" style="width: 0%"></div>
+                            </div>
+                            <span class="modal-task-progress-text" id="modalCurrentTaskProgressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Issues Queue -->
+                <div class="modal-section" id="modalIssuesSection">
+                    <div class="modal-section-title">Задачи в очереди (Issues)</div>
+                    <div id="modalIssuesLoader" class="modal-loader">
+                        <div class="modal-loader-spinner"></div>
+                        <span>Загрузка...</span>
+                    </div>
+                    <div id="modalIssuesList" class="issues-list" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget" role="complementary" aria-label="Чат команды">
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <span class="chat-title-icon">💬</span>
+                    <div>
+                        <div class="chat-title-text">Команда</div>
+                        <div class="chat-title-status">
+                            <span class="chat-status-dot"></span>
+                            <span id="chatOnlineCount">0 онлайн</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="toggleChat()" aria-label="Закрыть чат">×</button>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Написать сообщение..." onkeypress="handleChatKeypress(event)" aria-label="Поле ввода сообщения">
+                <button class="chat-send" onclick="sendMessage()" aria-label="Отправить сообщение">➤</button>
+            </div>
+        </div>
+        <button class="chat-toggle" onclick="toggleChat()" aria-label="Открыть чат с командой">💬</button>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="animations.js?v=3"></script>
+    <script src="security.js?v=3"></script>
+    <script>
+        // ==================== CONFIGURATION ====================
+        const API_ENDPOINT = '/ai-office/api/agents/status';
+        const UPDATE_INTERVAL = 30000;
+        let agentsStatusCache = {};
+        let apiAvailable = true;
+        let socket = null;
+        let isWebSocketConnected = false;
+
+        // ==================== AGENT DATA ====================
+        let agentsData = {};
+
+        // ==================== FETCH AGENTS STATUS ====================
+        async function fetchAgentsStatus() {
+            try {
+                const timestamp = Date.now();
+                const url = `${API_ENDPOINT}?t=${timestamp}`;
+                console.log('[API] Fetching agents from:', url);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                apiAvailable = true;
+                console.log('[API] Raw data received:', data);
+                const agents = data.agents || data;
+                const normalizedAgents = normalizeAgentsData(agents);
+                console.log('[API] Normalized agents:', normalizedAgents.map(a => ({ id: a.id, name: a.name, issuesCount: a.issues.length })));
+                return normalizedAgents;
+            } catch (error) {
+                console.warn('[API] Error fetching agents:', error.message);
+                apiAvailable = false;
+                return [];
+            }
+        }
+
+        // ==================== NORMALIZE AGENT DATA ====================
+        // API возвращает разные поля (id, name, agent), нормализуем данные
+        // Используем нормализованное имя как единый ключ для всего
+        function normalizeAgent(agent) {
+            const name = (agent.name || agent.agent || agent.id || 'unknown')
+                .toString()
+                .normalize('NFC')
+                .trim();
+
+            return {
+                ...agent,
+                id: name,  // используем name как единый ключ
+                name: name,
+                role: agent.role || 'Developer',
+                status: agent.status || 'working',
+                emoji: agent.emoji || '🧑‍💻',
+                task: agent.task || agent.currentTask || 'Нет задачи',
+                project: agent.project || 'No Project',
+                progress: agent.progress || 0,
+                issues: agent.issues || []
+            };
+        }
+
+        // Для обратной совместимости - псевдоним
+        function normalizeAgentData(agent) {
+            return normalizeAgent(agent);
+        }
+
+        function normalizeAgentsData(agents) {
+            return agents.map(normalizeAgent);
+        }
+
+        // ==================== RENDER WORK AREA ====================
+        function renderWorkArea(agents) {
+            const workArea = document.getElementById('workArea');
+            if (!workArea) return;
+
+            // Filter only working agents with physical desks (deskId 1-6)
+            const workingAgents = agents.filter(a => a.status === 'working' && (!a.deskId || a.deskId <= 6));
+            
+            workArea.innerHTML = workingAgents.map(agent => `
+                <div class="desk-station" role="button" tabindex="0"
+                     aria-label="${escapeHtml(agent.name)}, ${escapeHtml(agent.role)}. Задача: ${escapeHtml(agent.task || 'Нет задачи')}"
+                     data-agent-name="${escapeHtml(agent.name)}"
+                     onclick="openModal('${escapeHtml(agent.name)}')">
+                    <div class="computer-setup">
+                        <div class="monitor">
+                            <div class="screen-content">
+                                <div class="screen-project">${escapeHtml(agent.project || 'No Project')}</div>
+                                <div class="screen-task">${escapeHtml(agent.task || 'No Task')}</div>
+                                <div class="screen-code-line"></div>
+                            </div>
+                        </div>
+                        <div class="monitor-stand"></div>
+                        <div class="monitor-base"></div>
+                        <div class="keyboard"></div>
+                        <div class="mouse"></div>
+                        <div class="cable cable-left"></div>
+                        <div class="cable cable-right"></div>
+                        <div class="desk-surface"></div>
+                    </div>
+                    <div class="agent-container">
+                        <div class="agent-emoji typing" role="img" aria-label="${escapeHtml(agent.name)} работает">${agent.emoji || '🧑‍💻'}</div>
+                        <span class="agent-status-ring" aria-label="Статус: работает"></span>
+                        <div class="agent-info">
+                            <div class="agent-name">${escapeHtml(agent.name)} (${escapeHtml(agent.role)})</div>
+                            <div class="agent-role">${escapeHtml(agent.role)}</div>
+                            <div class="agent-task-tooltip">
+                                <div class="tooltip-header">${agent.emoji || '🧑‍💻'} ${escapeHtml(agent.name)}</div>
+                                <div class="tooltip-task">${escapeHtml(agent.task || 'Нет активной задачи')}</div>
+                                ${agent.issues && agent.issues.filter(i => i.state === 'open').length > 0 ? `
+                                    <div class="agent-issues">
+                                        <div class="agent-issues-title">Открытые задачи (${agent.issues.filter(i => i.state === 'open').length})</div>
+                                        <div class="agent-issues-list">
+                                            ${agent.issues.filter(i => i.state === 'open').slice(0, 3).map(issue => `
+                                                <a href="https://github.com/${issue.repo}/issues/${issue.number}" target="_blank" rel="noopener">
+                                                    #${issue.number}: ${escapeHtml(issue.title)}
+                                                    <span class="issue-status-open">[OPEN]</span>
+                                                </a>
+                                            `).join('')}
+                                            ${agent.issues.filter(i => i.state === 'open').length > 3 ? `<div style="font-size: 11px; color: var(--text-secondary); padding: 4px 8px;">...и ещё ${agent.issues.filter(i => i.state === 'open').length - 3}</div>` : ''}
+                                        </div>
+                                    </div>
+                                ` : '<div class="tooltip-task">Нет открытых задач</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render remote agents section
+            renderRemoteAgents(agents);
+        }
+
+        // ==================== RENDER REMOTE AGENTS ====================
+        function renderRemoteAgents(agents) {
+            const remoteAgentsContainer = document.getElementById('remoteAgents');
+            if (!remoteAgentsContainer) return;
+
+            // Filter remote agents (deskId > 6 or explicitly marked as remote)
+            const remoteAgents = agents.filter(a => a.deskId > 6 || a.location === 'remote' || ['Елена', 'Сергей'].includes(a.name));
+            
+            if (remoteAgents.length === 0) {
+                remoteAgentsContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 13px;">Нет удалённых агентов</div>';
+                return;
+            }
+            
+            remoteAgentsContainer.innerHTML = remoteAgents.map(agent => `
+                <div class="remote-agent-card" role="button" tabindex="0"
+                     aria-label="${escapeHtml(agent.name)}, ${escapeHtml(agent.role)}. Статус: ${agent.status === 'working' ? 'работает' : 'отдыхает'}. Задача: ${escapeHtml(agent.task || 'Нет задачи')}"
+                     data-agent-name="${escapeHtml(agent.name)}"
+                     onclick="openModal('${escapeHtml(agent.name)}')">
+                    <div class="remote-agent-avatar">
+                        <span class="remote-agent-emoji">${agent.emoji || '🧑‍💻'}</span>
+                        <span class="remote-agent-status ${agent.status === 'resting' ? 'resting' : ''}" aria-label="Статус: ${agent.status === 'working' ? 'работает' : 'отдыхает'}"></span>
+                    </div>
+                    <div class="remote-agent-info">
+                        <div class="remote-agent-name">${escapeHtml(agent.name)}</div>
+                        <div class="remote-agent-role">${escapeHtml(agent.role)}</div>
+                        <div class="remote-agent-task">${escapeHtml(agent.task || 'Нет задачи')}</div>
+                    </div>
+                    <div class="agent-task-tooltip">
+                        <div class="tooltip-header">${agent.emoji || '🧑‍💻'} ${escapeHtml(agent.name)} — ${escapeHtml(agent.role)}</div>
+                        <div class="tooltip-task">${escapeHtml(agent.task || 'Нет активной задачи')}</div>
+                        ${agent.issues && agent.issues.filter(i => i.state === 'open').length > 0 ? `
+                            <div class="agent-issues">
+                                <div class="agent-issues-title">Открытые задачи (${agent.issues.filter(i => i.state === 'open').length})</div>
+                                <div class="agent-issues-list">
+                                    ${agent.issues.filter(i => i.state === 'open').slice(0, 3).map(issue => `
+                                        <a href="https://github.com/${issue.repo}/issues/${issue.number}" target="_blank" rel="noopener">
+                                            #${issue.number}: ${escapeHtml(issue.title)}
+                                            <span class="issue-status-open">[OPEN]</span>
+                                        </a>
+                                    `).join('')}
+                                    ${agent.issues.filter(i => i.state === 'open').length > 3 ? `<div style="font-size: 11px; color: var(--text-secondary); padding: 4px 8px;">...и ещё ${agent.issues.filter(i => i.state === 'open').length - 3}</div>` : ''}
+                                </div>
+                            </div>
+                        ` : '<div class="tooltip-task">Нет открытых задач</div>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== RENDER REST ROOM ====================
+        function renderRestRoom(agents) {
+            const restRoom = document.getElementById('restRoom');
+            
+            // Filter only resting agents
+            const restingAgents = agents.filter(a => a.status === 'resting');
+            
+            // Clear and render resting agents list
+            restRoom.innerHTML = '';
+            
+            if (restingAgents.length === 0) {
+                restRoom.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">Никто не отдыхает</div>';
+                return;
+            }
+            
+            restingAgents.forEach(agent => {
+                const restAgentEl = document.createElement('div');
+                restAgentEl.className = 'rest-agent';
+                restAgentEl.innerHTML = `
+                    <div class="rest-agent-avatar">
+                        <span class="rest-agent-emoji">${agent.emoji || '😴'}</span>
+                        <span class="rest-status-ring" aria-label="Статус: отдыхает"></span>
+                    </div>
+                    <div class="rest-agent-info">
+                        <div class="rest-agent-name">${escapeHtml(agent.name)} (${escapeHtml(agent.role)})</div>
+                        <div class="rest-agent-status">Отдыхает</div>
+                    </div>
+                `;
+                restRoom.appendChild(restAgentEl);
+            });
+        }
+
+        // ==================== UPDATE STATUS BAR ====================
+        function updateStatusBar(agents) {
+            const totalCount = agents.length;
+            const workingCount = agents.filter(a => a.status === 'working').length;
+            const restingCount = agents.filter(a => a.status === 'resting').length;
+
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('workingCount').textContent = workingCount;
+            document.getElementById('restingCount').textContent = restingCount;
+            document.getElementById('chatOnlineCount').textContent = `${totalCount} онлайн`;
+        }
+
+        // ==================== UPDATE AGENTS DATA CACHE ====================
+        function updateAgentsData(agents) {
+            agents.forEach(agent => {
+                // Используем agent.name как ключ для консистентности
+                agentsData[agent.name] = agent;
+            });
+        }
+
+        // ==================== MAIN UPDATE FUNCTION ====================
+        async function updateAgentsStatus() {
+            const agents = await fetchAgentsStatus();
+            if (agents && agents.length > 0) {
+                updateAgentsData(agents);
+                renderWorkArea(agents);
+                renderRestRoom(agents);
+                updateStatusBar(agents);
+            }
+        }
+
+        // ==================== MODAL FUNCTIONS ====================
+        let currentAgentId = null;
+
+        async function openModal(agentName) {
+            currentAgentId = agentName;
+            
+            // Нормализуем входное имя
+            const normalizedName = agentName.toString().normalize('NFC').trim();
+            
+            // Ищем агента
+            let agent = agentsData[normalizedName];
+            
+            // Если не нашли — пробуем без учёта регистра
+            if (!agent) {
+                const lowerName = normalizedName.toLowerCase();
+                agent = Object.values(agentsData).find(a => 
+                    a.name && a.name.toLowerCase() === lowerName
+                );
+            }
+            
+            if (!agent) {
+                console.warn('[Modal] Agent not found in agentsData:', agentName);
+                console.log('[Modal] Available keys:', Object.keys(agentsData));
+                return;
+            }
+
+            // Update modal with agent data
+            document.getElementById('modalAvatar').textContent = agent.emoji || '🧑‍💻';
+            document.getElementById('modalName').textContent = agent.name;
+            document.getElementById('modalRole').textContent = agent.role;
+            
+            // Current task with progress
+            document.getElementById('modalCurrentTaskName').textContent = agent.task || 'Нет активной задачи';
+            document.getElementById('modalCurrentTaskProgress').style.width = (agent.progress || 0) + '%';
+            document.getElementById('modalCurrentTaskProgressText').textContent = (agent.progress || 0) + '%';
+            
+            // Update status
+            const taskStatusEl = document.getElementById('modalCurrentTaskStatus');
+            if (agent.status === 'resting') {
+                taskStatusEl.textContent = 'На паузе';
+                taskStatusEl.className = 'modal-task-status pending';
+            } else {
+                taskStatusEl.textContent = 'В работе';
+                taskStatusEl.className = 'modal-task-status in-progress';
+            }
+
+            // Show modal
+            document.getElementById('agentModal').classList.add('active');
+
+            // Load issues from API
+            await loadAgentIssues(agent.name);
+        }
+
+        async function loadAgentIssues(agentName) {
+            const loader = document.getElementById('modalIssuesLoader');
+            const issuesList = document.getElementById('modalIssuesList');
+            
+            loader.style.display = 'flex';
+            issuesList.style.display = 'none';
+            issuesList.innerHTML = '';
+
+            // Сначала проверяем кэшированные данные
+            const cachedAgent = agentsData[agentName];
+            let openIssues = [];
+            
+            if (cachedAgent && cachedAgent.issues) {
+                openIssues = cachedAgent.issues.filter(issue => issue.state === 'open');
+            }
+
+            try {
+                // Делаем API запрос для получения свежих данных
+                const timestamp = Date.now();
+                const url = `${API_ENDPOINT}/${encodeURIComponent(agentName)}?t=${timestamp}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const agentData = await response.json();
+                
+                // Всегда обновлять issues, даже если пустой массив
+                if (agentData.issues) {
+                    openIssues = agentData.issues.filter(issue => issue.state === 'open');
+                }
+            } catch (error) {
+                console.warn('[Modal] Error loading issues from API, using cached:', error.message);
+                // Используем кэшированные данные если API недоступен
+            }
+            
+            // Отображаем issues
+            if (openIssues.length > 0) {
+                issuesList.innerHTML = openIssues.map(issue => `
+                    <div class="issue-item">
+                        <span class="issue-number">#${issue.number}</span>
+                        <a href="https://github.com/${issue.repo}/issues/${issue.number}" target="_blank" rel="noopener" class="issue-title-text" style="color: var(--neon-blue); text-decoration: none;">
+                            ${escapeHtml(issue.title)}
+                        </a>
+                        <span class="issue-state open">OPEN</span>
+                    </div>
+                `).join('');
+            } else {
+                issuesList.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 20px;">Нет открытых задач</div>';
+            }
+            
+            loader.style.display = 'none';
+            issuesList.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('agentModal').classList.remove('active');
+            currentAgentId = null;
+        }
+
+        // Close modal on overlay click
+        document.getElementById('agentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('agentModal');
+                const chat = document.getElementById('chatContainer');
+                
+                if (modal.classList.contains('active')) {
+                    closeModal();
+                } else if (chat.classList.contains('active')) {
+                    toggleChat();
+                }
+            }
+        });
+
+        // ==================== CHAT FUNCTIONS ====================
+        function toggleChat() {
+            document.getElementById('chatContainer').classList.toggle('active');
+        }
+
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesContainer = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+            const messageHTML = `
+                <div class="chat-message own">
+                    <div class="chat-message-avatar">🧑‍💻</div>
+                    <div class="chat-message-content">
+                        <div class="chat-message-name">Вы</div>
+                        <div class="chat-message-bubble">${escapeHtml(message)}</div>
+                        <div class="chat-message-time">${time}</div>
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+            input.value = '';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== WEBSOCKET ====================
+        function initWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}`;
+            
+            console.log('[WebSocket] Connecting to:', wsUrl);
+            
+            try {
+                socket = io(wsUrl, {
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000
+                });
+                
+                socket.on('connect', () => {
+                    console.log('[WebSocket] Connected');
+                    isWebSocketConnected = true;
+                    socket.emit('request-agents-status');
+                });
+                
+                socket.on('disconnect', () => {
+                    console.log('[WebSocket] Disconnected');
+                    isWebSocketConnected = false;
+                });
+                
+                socket.on('agents-status-update', (data) => {
+                    console.log('[WebSocket] Status update received:', data);
+                    if (data.agents && Array.isArray(data.agents)) {
+                        const normalizedAgents = normalizeAgentsData(data.agents);
+                        updateAgentsData(normalizedAgents);
+                        renderWorkArea(normalizedAgents);
+                        renderRestRoom(normalizedAgents);
+                        updateStatusBar(normalizedAgents);
+                    }
+                });
+                
+                socket.on('error', (error) => {
+                    console.error('[WebSocket] Error:', error);
+                });
+            } catch (error) {
+                console.warn('[WebSocket] Failed to initialize:', error.message);
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[Init] AI Team Office starting...');
+            
+            // Initial load
+            updateAgentsStatus();
+            
+            // Initialize WebSocket
+            initWebSocket();
+            
+            // Periodic update (fallback)
+            setInterval(() => {
+                if (!isWebSocketConnected) {
+                    console.log('[Polling] WebSocket not connected, using REST polling');
+                    updateAgentsStatus();
+                }
+            }, UPDATE_INTERVAL);
+        });
+    </script>
+</body>
+</html>
