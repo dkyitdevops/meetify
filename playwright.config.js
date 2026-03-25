@@ -11,16 +11,16 @@ module.exports = {
     baseURL: 'http://localhost:3001',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    launchOptions: {
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined,
-    },
   },
   projects: [
     {
       name: 'chromium',
       use: { 
         browserName: 'chromium',
-        viewport: { width: 1280, height: 720 }
+        viewport: { width: 1280, height: 720 },
+        launchOptions: {
+          executablePath: '/home/node/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome'
+        }
       },
     },
   ],

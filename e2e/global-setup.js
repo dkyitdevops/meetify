@@ -3,16 +3,15 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 module.exports = async () => {
-  console.log('[Global Setup] Starting AI Team Office server in TEST mode...');
+  console.log('[Global Setup] Starting Meetify test server...');
   
-  // Запускаем сервер с тестовыми данными
-  const serverPath = path.join(__dirname, '..', 'ai-team-office', 'server', 'server.js');
+  // Запускаем Meetify тестовый сервер
+  const serverPath = path.join(__dirname, '..', 'api', 'meetify-test-server.js');
   const server = spawn('node', [serverPath], {
     env: { 
       ...process.env, 
       NODE_ENV: 'test', 
-      PORT: '3001',
-      TEST_MODE: 'true'  // Включаем тестовый режим
+      PORT: '3001'
     },
     stdio: 'pipe'
   });
