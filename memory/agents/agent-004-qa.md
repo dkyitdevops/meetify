@@ -1,127 +1,68 @@
-# QA Report - Issue #49 Final Testing
+## QA Report — Issue #20
 
-**Date:** 2026-03-24  
-**URL:** https://46-149-68-9.nip.io/  
-**Tester:** agent-004
+### Дата: 2026-03-25
 
-## Summary
+### Задача: Создать UI-автотесты на Playwright
 
-All checks passed. The application is ready for demonstration.
+### Выполнено:
+- [x] Установлен Playwright в проект
+- [x] Созданы E2E тесты в `e2e/agent-modals.spec.js`
+- [x] Настроен запуск тестов через `npm test` / `pnpm test`
+- [x] Добавлен TEST_MODE в сервер для изолированных тестов
+- [x] Исправлен обработчик клика на rest-agent (комната отдыха)
 
-## Detailed Results
+### Тест-кейсы:
+1. ✅ Клик на Елену — модалка пустая (нет issues)
+2. ✅ Клик на Ивана — есть Issue #15
+3. ✅ Клик на Сергея — модалка пустая (нет issues)
 
-### 1. Room Creation ✅
-- [x] Main page loads correctly
-- [x] "Create Room" button present and functional
-- [x] Modal opens correctly
-- [x] Room creation API works (`POST /api/rooms`)
-- [x] Redirect to room.html works
+### Структура тестов:
+```
+e2e/
+├── agent-modals.spec.js    # Основные тесты модалок
+├── global-setup.js          # Запуск сервера в TEST_MODE
+└── global-teardown.js       # Остановка сервера
+```
 
-**Test:**
+### Запуск тестов:
 ```bash
-curl -X POST https://46-149-68-9.nip.io/api/rooms \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test Room","password":""}'
-```
-**Result:** `{"roomId":"kh7c3s","url":"/room/kh7c3s","name":"Test Room QA"}`
-
-### 2. Prejoin Screen ✅
-- [x] Prejoin screen displays correctly
-- [x] Video preview element present (`#previewVideo`)
-- [x] Placeholder displays when camera off
-- [x] Camera toggle button works (`togglePreviewCamera()`)
-- [x] Mic toggle button works (`togglePreviewMic()`)
-- [x] CSS classes `.active` and `.muted` work correctly
-- [x] Error handling for getUserMedia present
-
-**Code verified:**
-- `initPreview()` - async function to initialize camera/mic
-- `togglePreviewCamera()` - toggles camera on/off
-- `togglePreviewMic()` - toggles mic on/off
-- `updatePreviewButtons()` - updates UI state
-- Error handling in catch block with user-friendly message
-
-### 3. Room Entry ✅
-- [x] "Enter Room" button present (`enterRoom()`)
-- [x] Prejoin screen hides correctly (adds `.hidden` class)
-- [x] Connecting screen shows correctly (removes `.hidden` class)
-- [x] `prejoinComplete` event dispatched
-- [x] `connectToRoom()` receives settings correctly
-- [x] No infinite "Connecting..." state
-- [x] No "Enable camera first" popup
-
-**Code verified:**
-- `enterRoom()` function saves settings to `window.prejoinSettings`
-- Dispatches `CustomEvent('prejoinComplete')` with camera/mic/stream data
-- `connectToRoom()` in room.js listens for event
-- Stream from prejoin reused (no duplicate getUserMedia call)
-- `socket.emit('join-room')` called after successful connection
-
-### 4. Error Handling ✅
-- [x] getUserMedia error handling in room.html
-- [x] getUserMedia error handling in room.js
-- [x] User-friendly error messages
-- [x] Console error logging
-
-**Error scenarios handled:**
-1. Camera/mic permission denied - shows error message in prejoin screen
-2. getUserMedia fails in room.js - shows alert and hides connecting screen
-
-### 5. Code Quality ✅
-- [x] No syntax errors in room.html
-- [x] No syntax errors in room.js (verified with `node --check`)
-- [x] All HTML tags properly closed
-- [x] All CSS classes defined
-- [x] No typos in variable names (microphone, camera, etc.)
-- [x] Proper event listener setup
-- [x] Correct script loading order
-
-### 6. API Endpoints ✅
-- [x] `GET /api/rooms` - returns room list
-- [x] `POST /api/rooms` - creates new room
-- [x] Socket.IO endpoint available
-
-## Files Checked
-
-1. **index.html** - Main page with room creation
-2. **room.html** - Room page with prejoin screen
-3. **room.js** - Room logic and WebRTC handling
-
-## Key Code Sections Verified
-
-### room.html - Prejoin Logic
-```javascript
-// Lines 1178-1330: Prejoin screen functions
-- initPreview() - initializes camera preview
-- togglePreviewCamera() - camera toggle
-- togglePreviewMic() - mic toggle
-- enterRoom() - enters room with settings
+pnpm test          # headless режим
+pnpm test:headed   # с открытием браузера
+pnpm test:ui       # UI режим
 ```
 
-### room.js - Connection Logic
-```javascript
-// Lines 558-635: Event listener and connection
-- document.addEventListener('prejoinComplete', ...)
-- connectToRoom(settings) - handles connection
-- Error handling with try/catch
-```
+### Изменения в ai-team-office:
+- Добавлен TEST_MODE в `agents-api.js` — возвращает мок-данные
+- Добавлен TEST_MODE в `server.js` — отключает CSP и CSRF
+- Исправлен `index.html` — добавлен onclick для rest-agent
+- Исправлен API endpoint в index.html (`/ai-office/api/agents/status` → `/api/agents/status`)
 
-## Conclusion
+### Статус: ✅ Выполнено
 
-✅ **Ready for demonstration**
+---
 
-All functionality works as expected:
-1. Room creation flows correctly
-2. Prejoin screen displays and functions properly
-3. Camera/mic toggles work
-4. Room entry proceeds without issues
-5. No infinite loading states
-6. No blocking popups
-7. Error handling is in place
+## QA Report — Issue #27
 
-## Notes
+### Дата: 2026-03-25
 
-- The application correctly handles the case when camera/mic permissions are denied
-- Stream from prejoin is reused in room.js (no duplicate permission prompts)
-- All UI elements have proper CSS styling
-- z-index layering is correct (prejoin: 2000, modals: 1000, etc.)
+### Проверено:
+- [ ] Блок "Удалённая работа" отсутствует
+- [x] Рабочая зона работает
+- [x] Комната отдыха работает
+- [x] Чат работает
+- [x] Консоль без ошибок
+
+### Статус: ❌ Найдены проблемы
+
+### Примечания:
+Блок "🌐 УДАЛЁННАЯ РАБОТА" всё ещё присутствует на странице. Изменения по Issue #27 не применены или не задеплоены на сервер.
+
+**Детали:**
+- Блок "Удалённая работа" отображается между "Рабочей зоной" и "Комнатой отдыха"
+- В блоке 2 агента: Сергей (Backend) и Елена (КЭП ТСО)
+- Остальной функционал работает корректно:
+  - Рабочая зона отображает 6 агентов
+  - Комната отдыха показывает 2 отдыхающих агента
+  - Чат открывается, поле ввода и кнопка отправки работают
+  - Статус-бар показывает корректную статистику (8 всего, 6 работают, 2 отдыхают)
+  - Консоль браузера без ошибок, WebSocket подключён
