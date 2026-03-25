@@ -1,65 +1,154 @@
-# QA Engineer Report — Issue #49
-
-## Дата: 2026-03-25
-## Агент: agent-004
+# QA Report: Meetify Room Connection Issue
+**Agent:** agent-004 (QA Engineer)  
+**Date:** 2026-03-25  
+**Room ID:** c56t45  
+**Test URL:** https://46-149-68-9.nip.io/meetify/
 
 ---
 
-## Issue #49: Проблема с колёсиком подключения в Meetify
+## Summary
+
+**CRITICAL BUG FOUND:** Несоответствие между отправителем и получателем события `prejoinComplete`. Событие отправляется на `window`, но слушатель установлен на `document`.
+
+---
+
+## Full Console Log
+
+```
+[Verbose] [DOM] Password field is not contained in a form
+[Verbose] [DOM] Password field is not contained in a form
+[Error] Ошибка доступа к медиа: NotFoundError: Requested device not found (room.html:1218)
+[Log] Manually triggering prejoinComplete...
+[Error] Error accessing media devices: TypeError: Failed to execute 'getUserMedia' on 'MediaDevices': 
+        At least one of audio and video must be requested
+    at connectToRoom (room.js:598:56)
+    at HTMLDocument.<anonymous> (room.js:563:5)
+```
+
+---
+
+## Root Cause Analysis
 
 ### Проблема
-При входе в комнату Meetify крутится колёсико "Подключение..." и появляется окно "Сначала включите камеру".
 
-### Что было сделано
-
-1. **Создан Playwright-тест** `e2e/connection-spinner.spec.js` с 4 тест-кейсами:
-   - Проверка отображения спиннера при отказе в доступе к камере
-   - Проверка alert "Сначала включите камеру"
-   - Проверка CSS-структуры экрана подключения
-   - Документирование полного flow при блокировке камеры
-
-2. **Создан тестовый сервер** `api/meetify-test-server.js` для e2e тестирования
-
-3. **Обновлена конфигурация** Playwright для работы с Meetify
-
-### Результаты тестирования
-
-**Статус:** 3 теста прошли, 1 упал (ожидаемо — воспроизводит баг)
-
-**Скриншоты:**
-- `test-results/issue-49-connection-spinner.png` — показывает бесконечное "Подключение к комнате..."
-- `test-results/issue-49-final-state.png` — финальное состояние страницы
-
-### Наблюдения — что именно ломается
-
-1. **Бесконечный спиннер:** Когда `getUserMedia` отклоняется (нет доступа к камере), экран подключения (`#connectingScreen`) остаётся видимым навсегда
-
-2. **Отсутствие обработки ошибок:** В `room.js` нет `try/catch` вокруг вызова `getUserMedia`, и при ошибке не скрывается экран подключения
-
-3. **Нет fallback UI:** При отказе в доступе к камере пользователь застревает на экране подключения без возможности продолжить
-
-### Рекомендации по исправлению
-
+**Файл room.html (строка 1326):**
 ```javascript
-// В room.js нужно добавить обработку ошибок:
-try {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  // ... инициализация
-} catch (err) {
-  console.error('Camera access denied:', err);
-  // Скрыть спиннер
-  connectingScreen.classList.add('hidden');
-  // Показать сообщение или кнопку "Продолжить без камеры"
-  showCameraErrorUI();
+window.dispatchEvent(new CustomEvent('prejoinComplete', {
+    detail: window.prejoinSettings
+}));
+```
+
+**Файл room.js (строка 559):**
+```javascript
+document.addEventListener('prejoinComplete', (event) => {
+    const { camera, microphone } = event.detail;
+    connectToRoom({ camera, microphone });
+});
+```
+
+### Почему это не работает
+
+События `CustomEvent` **не всплывают** по умолчанию (bubbles: false). Когда событие отправляется на `window`, слушатель на `document` его не получает, потому что:
+1. `window` — это глобальный объект, родитель `document`
+2. Событие не всплывает от `window` к `document` (document внутри window, а не наоборот)
+3. Слушатель на `document` никогда не срабатывает
+
+### Дополнительная проблема
+
+Даже если бы событие дошло, при camera=false и microphone=false вызов `getUserMedia({video: false, audio: false})` вызывает ошибку:
+```
+TypeError: Failed to execute 'getUserMedia' on 'MediaDevices': 
+At least one of audio and video must be requested
+```
+
+---
+
+## Where Exactly It Fails
+
+| Шаг | Статус | Примечание |
+|-----|--------|------------|
+| 1. Отправка события prejoinComplete | ✅ | Отправляется на `window` |
+| 2. Получение события prejoinComplete | ❌ **FAIL** | Слушатель на `document`, событие не доходит |
+| 3. Вызов connectToRoom | ❌ | Не вызывается из-за шага 2 |
+| 4. Подключение к WebSocket | ❌ | join-room не отправляется |
+| 5. Полноценное подключение | ❌ | Пользователь зависает на "Подключение к комнате..." |
+
+---
+
+## Recommendations
+
+### Fix 1: Исправить несоответствие отправителя и слушателя (КРИТИЧНО)
+
+**Вариант A:** Изменить отправителя в room.html:
+```javascript
+// room.html строка 1326
+document.dispatchEvent(new CustomEvent('prejoinComplete', {
+    detail: window.prejoinSettings
+}));
+```
+
+**Вариант B:** Изменить слушателя в room.js:
+```javascript
+// room.js строка 559
+window.addEventListener('prejoinComplete', (event) => {
+    // ...
+});
+```
+
+**Рекомендуется Вариант A** — меньше изменений, `document` более логичен для DOM-событий.
+
+### Fix 2: Исправить обработку отключенных устройств
+
+В `connectToRoom` добавить проверку:
+```javascript
+async function connectToRoom(settings = {}) {
+    const { camera = true, microphone = true } = settings;
+    
+    // Если оба устройства отключены, пропускаем getUserMedia
+    if (!camera && !microphone) {
+        localStream = null;
+        document.getElementById('connectingScreen').classList.add('hidden');
+        socket.emit('join-room', roomId);
+        addChatMessage('Система', 'Вы присоединились к комнате (без камеры и микрофона)', true);
+        return;
+    }
+    
+    // ... остальной код
 }
 ```
 
-### Файлы
+### Fix 3: Добавить таймаут и обработку ошибок
 
-- Тест: `e2e/connection-spinner.spec.js`
-- Сервер: `api/meetify-test-server.js`
-- Commit: `433d5d9`
+Добавить таймаут на экран подключения:
+```javascript
+// В room.html после enterRoom()
+setTimeout(() => {
+    const connectingScreen = document.getElementById('connectingScreen');
+    if (!connectingScreen.classList.contains('hidden')) {
+        connectingScreen.innerHTML = '<p>Ошибка подключения. Попробуйте обновить страницу.</p>';
+    }
+}, 10000);
+```
 
 ---
 
-*Следующий шаг: передать разработчику (agent-002) для исправления*
+## Verification Steps After Fix
+
+1. Открыть https://46-149-68-9.nip.io/meetify/
+2. Создать комнату
+3. На экране подготовки нажать "Войти в комнату"
+4. Проверить Console:
+   - ✅ Должно появиться "Sending prejoinComplete" (если добавить лог)
+   - ✅ Должен сработать слушатель в room.js
+   - ✅ Должен вызваться connectToRoom
+   - ✅ Должен отправиться socket.emit('join-room', roomId)
+   - ✅ Экран подключения должен скрыться
+   - ✅ Должно появиться сообщение "Вы присоединились к комнате"
+
+---
+
+## Additional Notes
+
+- Socket.io подключение работает корректно (socket.connected = true)
+- WebRTC и остальная функциональность room.js выглядит исправной
+- Проблема чисто в коммуникации между room.html и room.js через CustomEvent
