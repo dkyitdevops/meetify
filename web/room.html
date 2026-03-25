@@ -1028,8 +1028,8 @@
             if (roomContent) roomContent.style.display = 'block';
             
             // Dispatch event for room.js
-            log('dispatching prejoinComplete');
-            document.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
+            log('Sending prejoinComplete');
+            window.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
         }
         
         function showError(message) {
@@ -1042,6 +1042,6 @@
         }
     </script>
     
-    <script src="/web/room.js"></script>
+    <script src="room.js"></script>
 </body>
 </html>
