@@ -580,7 +580,7 @@ window.onload = function() {
     log('prejoinComplete listener added');
     
     // Слушаем событие от prejoin
-    document.addEventListener('prejoinComplete', function(event) {
+    window.addEventListener('prejoinComplete', function(event) {
         log('prejoinComplete event received', event.detail);
         connectToRoom(event.detail);
     });
@@ -1415,6 +1415,25 @@ function showHandRaisedIcon(userId) {
     
     // Удаляем старую иконку если есть
     hideHandRaisedIcon(userId);
+    
+    // Создаём иконку
+    var icon = document.createElement('div');
+    icon.className = 'hand-raised-icon';
+    icon.id = 'hand-icon-' + userId;
+    icon.textContent = '✋';
+    wrapper.appendChild(icon);
+}
+
+// Скрыть иконку поднятой руки
+function hideHandRaisedIcon(userId) {
+    var icon = document.getElementById('hand-icon-' + userId);
+    if (icon) {
+        icon.remove();
+    }
+}
+
+// Загружаем фон при старте
+window.addEventListener('load', loadVirtualBackground);userId);
     
     // Создаём иконку
     var icon = document.createElement('div');
