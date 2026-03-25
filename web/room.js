@@ -580,7 +580,7 @@ window.onload = function() {
     log('prejoinComplete listener added');
     
     // Слушаем событие от prejoin
-    window.addEventListener('prejoinComplete', function(event) {
+    document.addEventListener('prejoinComplete', function(event) {
         console.log('Received prejoinComplete');
         log('prejoinComplete event received', event.detail);
         connectToRoom(event.detail);

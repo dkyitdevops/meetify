@@ -1029,7 +1029,7 @@
             
             // Dispatch event for room.js
             log('Sending prejoinComplete');
-            window.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
+            document.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
         }
         
         function showError(message) {
