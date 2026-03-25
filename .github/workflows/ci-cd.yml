@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd tests
-        npm ci
+        npm install
     
     - name: Run linting
       run: |
