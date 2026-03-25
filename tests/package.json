@@ -1,21 +1,5 @@
 {
   "name": "meetify-tests",
-<<<<<<< HEAD
-  "version": "1.0.0",
-  "description": "E2E tests for Meetify with Allure",
-  "scripts": {
-    "test": "node smoke.test.js",
-    "test:allure": "node allure.test.js",
-    "allure:report": "allure generate ./allure-results -o ./allure-report --clean",
-    "allure:serve": "allure serve ./allure-results"
-  },
-  "dependencies": {
-    "allure-js-commons": "^2.9.2"
-  },
-  "devDependencies": {
-    "allure-commandline": "^2.24.1"
-  }
-=======
   "version": "2.0.0",
   "description": "Comprehensive test suite for Meetify video conferencing app",
   "scripts": {
@@ -37,7 +21,7 @@
   "dependencies": {
     "@playwright/test": "^1.58.2",
     "allure-js-commons": "^2.9.2",
-    "puppeteer": "^21.0.0"
+    "puppeteer": "^21.11.0"
   },
   "devDependencies": {
     "allure-commandline": "^2.24.1",
@@ -58,5 +42,4 @@
   ],
   "author": "Meetify Team",
   "license": "MIT"
->>>>>>> master
 }

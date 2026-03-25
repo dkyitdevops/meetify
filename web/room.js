@@ -1,3 +1,22 @@
+// ==================== DEBUG LOGGING ====================
+const DEBUG = true;
+function log(...args) {
+    if (DEBUG) console.log('[Meetify]', ...args);
+}
+function error(...args) {
+    console.error('[Meetify ERROR]', ...args);
+}
+function showError(message) {
+    const errorDiv = document.getElementById('errorDisplay');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+    error('Error shown to user:', message);
+}
+log('room.js loaded');
+// ==================== DEBUG LOGGING END ====================
+
 // Получаем ID комнаты из URL
 var urlParams = new URLSearchParams(window.location.search);
 var roomId = urlParams.get('id');
@@ -9,6 +28,7 @@ if (!roomId) {
 
 // Отображаем ID комнаты
 document.getElementById('roomIdDisplay').textContent = roomId;
+log('Room ID set:', roomId);
 
 // Загружаем данные комнаты из sessionStorage
 var roomDataStr = sessionStorage.getItem('room_' + roomId + '_data');
@@ -557,22 +577,38 @@ var configuration = {
 
 // Подключаемся при загрузке страницы
 window.onload = function() {
-    connectToRoom();
+    log('prejoinComplete listener added');
+    
+    // Слушаем событие от prejoin
+    document.addEventListener('prejoinComplete', function(event) {
+        log('prejoinComplete event received', event.detail);
+        connectToRoom(event.detail);
+    });
+    
+    // Если prejoin не используется, подключаемся сразу
+    if (!window.prejoinSettings) {
+        connectToRoom();
+    }
 };
 
-async function connectToRoom() {
+async function connectToRoom(settings) {
+    log('connectToRoom called with settings', settings);
     try {
+        log('getUserMedia requested');
         // Получаем доступ к камере и микрофону
         localStream = await navigator.mediaDevices.getUserMedia({ 
             video: true, 
             audio: true 
         });
+        log('getUserMedia success');
         
         // Показываем локальное видео
         addVideoStream(localStream, 'local', true);
         
         // Скрываем экран подключения
+        log('connectingScreen hidden');
         document.getElementById('connectingScreen').classList.add('hidden');
+        log('connectingScreen shown');
         
         // Подключаемся к комнате
         socket.emit('join-room', roomId);
@@ -581,8 +617,105 @@ async function connectToRoom() {
         addChatMessage('Система', 'Вы присоединились к комнате', true);
         
     } catch (err) {
-        console.error('Error accessing media devices:', err);
-        alert('Ошибка доступа к камере/микрофону. Разрешите доступ и обновите страницу.');
+        error('getUserMedia error', err);
+        error('Error accessing media devices:', err);
+        
+        // Скрываем экран подключения при ошибке
+        document.getElementById('connectingScreen').classList.add('hidden');
+        
+        // Показываем экран ошибки с вариантами действий
+        showMediaErrorScreen(err);
+    }
+}
+
+// Показываем экран ошибки доступа к медиаустройствам
+function showMediaErrorScreen(err) {
+    // Создаём контейнер для ошибки если его ещё нет
+    let errorScreen = document.getElementById('mediaErrorScreen');
+    if (!errorScreen) {
+        errorScreen = document.createElement('div');
+        errorScreen.id = 'mediaErrorScreen';
+        errorScreen.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1001; padding: 20px; text-align: center;';
+        document.body.appendChild(errorScreen);
+    }
+    
+    // Определяем тип ошибки
+    let errorMessage = 'Не удалось получить доступ к камере и микрофону';
+    let errorDetails = 'Проверьте настройки браузера и разрешите доступ к устройствам';
+    
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMessage = 'Доступ к камере и микрофону запрещён';
+        errorDetails = 'Вы отклонили запрос на доступ. Проверьте настройки браузера и разрешите доступ к устройствам.';
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errorMessage = 'Камера или микрофон не найдены';
+        errorDetails = 'Убедитесь, что устройства подключены и работают корректно.';
+    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errorMessage = 'Устройства заняты другим приложением';
+        errorDetails = 'Закройте другие программы, использующие камеру или микрофон, и попробуйте снова.';
+    }
+    
+    errorScreen.innerHTML = `
+        <div style="font-size: 64px; margin-bottom: 20px;">📷❌</div>
+        <h2 style="color: #ef4444; margin-bottom: 10px;">${errorMessage}</h2>
+        <p style="color: #888; max-width: 400px; margin-bottom: 30px; line-height: 1.5;">${errorDetails}</p>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+            <button onclick="retryMediaAccess()" style="padding: 15px 30px; background: #667eea; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
+                🔄 Повторить
+            </button>
+            <button onclick="joinWithoutMedia()" style="padding: 15px 30px; background: rgba(102, 126, 234, 0.2); color: #fff; border: 2px solid #667eea; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
+                🎧 Войти без камеры
+            </button>
+            <button onclick="leaveRoom()" style="padding: 15px 30px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
+                🚪 Выйти
+            </button>
+        </div>
+    `;
+    errorScreen.style.display = 'flex';
+}
+
+// Скрываем экран ошибки
+function hideMediaErrorScreen() {
+    const errorScreen = document.getElementById('mediaErrorScreen');
+    if (errorScreen) {
+        errorScreen.style.display = 'none';
+    }
+}
+
+// Повторная попытка получить доступ к медиа
+async function retryMediaAccess() {
+    hideMediaErrorScreen();
+    document.getElementById('connectingScreen').classList.remove('hidden');
+    await connectToRoom();
+}
+
+// Вход без камеры и микрофона (только чат)
+async function joinWithoutMedia() {
+    hideMediaErrorScreen();
+    log('Joining without media (audio/video)');
+    
+    // Устанавливаем флаги
+    isMicEnabled = false;
+    isCamEnabled = false;
+    
+    // Скрываем экран подключения
+    document.getElementById('connectingScreen').classList.add('hidden');
+    
+    // Подключаемся к комнате без медиа
+    socket.emit('join-room', roomId);
+    
+    // Показываем уведомление
+    addChatMessage('Система', 'Вы присоединились к комнате (без камеры и микрофона)', true);
+    
+    // Обновляем UI кнопок
+    var micBtn = document.getElementById('micBtn');
+    var camBtn = document.getElementById('camBtn');
+    if (micBtn) {
+        micBtn.textContent = '🎤❌';
+        micBtn.classList.add('muted');
+    }
+    if (camBtn) {
+        camBtn.textContent = '📹❌';
+        camBtn.classList.add('muted');
     }
 }
 

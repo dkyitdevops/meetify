@@ -1,28 +1,17 @@
-# Agent-002 Frontend Developer Memory
+## GitHub Issue #27 - ✅ Исправлено
 
-## GitHub Issue #49 - Исправлено
-
-### Дата: 2026-03-24
+### Дата: 2025-03-25
 
 ### Что было сделано:
-1. **Проверка опечатки `ocument`**: В файле `/data/workspace/web/room.js` опечатка не найдена - строка 559 содержит корректный `document.addEventListener`
-2. **Добавлена обработка ошибки getUserMedia**: В функции `connectToRoom` в блок `catch` добавлено скрытие `connectingScreen` при ошибке доступа к камере/микрофону
+1. Удалена HTML-секция "Удалённая работа" (`id="remoteWorkSection"` и `id="remoteAgents"`)
+2. Удалена JavaScript-функция `renderRemoteAgents()` полностью
+3. Удалён вызов `renderRemoteAgents(agents)` из функции `renderWorkArea()`
+4. Проверено в браузере — блок удалён, ошибок в консоли нет
+5. Изменения закоммичены: `git commit -m "ui: remove remote agents section (#27)"`
 
 ### Изменения:
-```javascript
-// Было:
-} catch (err) {
-    console.error('Error accessing media devices:', err);
-    alert('Ошибка доступа к камере/микрофону. Разрешите доступ и обновите страницу.');
-}
-
-// Стало:
-} catch (err) {
-    console.error('Error accessing media devices:', err);
-    // Скрываем экран подключения при ошибке
-    document.getElementById('connectingScreen').style.display = 'none';
-    alert('Ошибка доступа к камере/микрофону. Разрешите доступ и обновите страницу.');
-}
-```
+- Файл: `index.html`
+- Коммит: `6b564e6`
+- Статистика: 1 insertion(+), 61 deletions(-)
 
 ### Статус: ✅ Исправлено

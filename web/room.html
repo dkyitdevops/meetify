@@ -714,6 +714,9 @@
         <p>Подключение к комнате...</p>
     </div>
     
+    <!-- Отображение ошибок -->
+    <div id="errorDisplay" style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px; display: none; z-index: 3000; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
+    
     <div class="header">
         <a href="/" class="logo">🎥 Meetify</a>
         
@@ -965,6 +968,80 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/room.js"></script>
+    
+    <!-- Prejoin Functions with Logging -->
+    <script>
+        // Debug logging functions (mirrored from room.js)
+        const DEBUG = true;
+        function log(...args) {
+            if (DEBUG) console.log('[Meetify]', ...args);
+        }
+        function error(...args) {
+            console.error('[Meetify ERROR]', ...args);
+        }
+        
+        // Store prejoin settings globally
+        window.prejoinSettings = null;
+        
+        async function initPreview() {
+            log('initPreview started');
+            try {
+                log('getUserMedia requested');
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                log('getUserMedia success, stream:', stream);
+                
+                // Show preview video
+                const previewVideo = document.getElementById('previewVideo');
+                if (previewVideo) {
+                    previewVideo.srcObject = stream;
+                }
+                return stream;
+            } catch (err) {
+                log('getUserMedia failed:', err);
+                error('getUserMedia failed:', err);
+                showError('Не удалось получить доступ к камере/микрофону');
+                throw err;
+            }
+        }
+        
+        function enterRoom() {
+            log('enterRoom called');
+            
+            // Gather settings from prejoin form
+            const settings = {
+                name: document.getElementById('userName')?.value || 'Гость',
+                micEnabled: document.getElementById('micToggle')?.checked !== false,
+                camEnabled: document.getElementById('camToggle')?.checked !== false
+            };
+            
+            window.prejoinSettings = settings;
+            log('prejoinSettings:', window.prejoinSettings);
+            
+            // Hide prejoin screen, show room
+            const prejoinScreen = document.getElementById('prejoinScreen');
+            const roomContent = document.getElementById('roomContent');
+            
+            if (prejoinScreen) prejoinScreen.style.display = 'none';
+            if (roomContent) roomContent.style.display = 'block';
+            
+            // Dispatch event for room.js
+            log('dispatching prejoinComplete');
+            document.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorDisplay');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+            error('Error shown to user:', message);
+        }
+    </script>
+    
+    <script src="/web/room.js"></script>
 </body>
 </html>

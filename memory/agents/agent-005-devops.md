@@ -1,103 +1,41 @@
-# 🤖 Агент: DevOps Engineer
+# Agent-005: DevOps Engineer — Activity Log
 
-**ID:** agent-005  
-**Роль:** DevOps Engineer  
-**Специализация:** Docker, CI/CD, Nginx, деплой  
-**Создан:** 2026-03-24  
-**Статус:** Активен
+## 2026-03-25: Issue #6 — CI/CD Healthcheck Fix
 
----
+### Problem
+GitHub Actions pipeline падал на шаге healthcheck — endpoint `/health` не был настроен на сервере.
 
-## 📊 Статистика
+### Changes Made
 
-| Метрика | Значение |
-|---------|----------|
-| Всего задач | 5 |
-| Успешно | 5 |
-| В работе | 0 |
+#### 1. server/server.js
+Добавлен `/health` endpoint:
+```javascript
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+```
 
----
+#### 2. .github/workflows/deploy.yml
+- Исправлен URL healthcheck: `http://${{ secrets.SERVER_HOST }}:3001/health`
+- Восстановлен Docker cache для корректной работы build
 
-## 📋 История задач
+#### 3. docker-compose.yml
+- Изменено с локального `build` на образ из GHCR: `ghcr.io/dkyitdevops/ai-team-office:latest`
+- Обновлён healthcheck внутри контейнера на `/health`
 
-### 2026-03-24 16:19 — Issue #44 (деплой)
-**Проект:** Meetify  
-**Задача:** Деплой модального окна создания комнаты  
-**Результат:** ✅ Успешно  
-**Описание:**
-- Скопированы файлы на сервер
-- Перезапущены контейнеры web и api
-- Проверка работоспособности
+### Root Cause
+Основная проблема была в `docker-compose.yml` — он использовал локальную сборку (`build: context: ./server`), а workflow копировал только docker-compose файлы, не исходный код. Поэтому сервер всегда использовал старый код.
 
----
+### Result
+- Pipeline: ✅ SUCCESS
+- Endpoint: http://46.149.68.9:3001/health
+- Response: `{"status":"ok","timestamp":"2026-03-25T18:48:44.681Z"}`
 
-### 2026-03-24 15:28 — Issue #42 (nginx)
-**Проект:** Meetify  
-**Задача:** Исправить nginx конфигурацию  
-**Результат:** ✅ Успешно  
-**Описание:**
-- Добавлен location /room/ в nginx.conf
-- Перезапущен контейнер web
-- Редирект в комнату работает
-
----
-
-### 2026-03-24 15:00 — Issue #41 (деплой)
-**Проект:** Meetify  
-**Задача:** Деплой упрощённого создания комнаты  
-**Результат:** ✅ Успешно  
-**Описание:**
-- Загружены файлы на сервер
-- Перезапущены контейнеры
-- API health check — OK
-
----
-
-### 2026-03-24 14:00 — Issue #43 (деплой)
-**Проект:** Meetify  
-**Задача:** Деплой исправлений функциональности  
-**Результат:** ✅ Успешно  
-**Описание:**
-- Деплой room.html, room.js
-- Перезапуск контейнеров
-- Проверка статуса
-
----
-
-### 2026-03-24 12:00 — Issue #14 (деплой)
-**Проект:** AI Team Office  
-**Задача:** Деплой динамических статусов  
-**Результат:** ✅ Успешно  
-**Описание:**
-- Деплой agents-api.js
-- Деплой index.html
-- Проверка API
-
----
-
-## 🎯 Навыки (подтверждённые)
-
-- [x] Docker, Docker Compose
-- [x] Nginx конфигурация
-- [x] Деплой на сервер
-- [x] Перезапуск сервисов
-- [x] Проверка логов
-- [x] SSH/scp
-- [x] GitHub Actions
-
----
-
-## 💡 Предпочтения
-
-- **Инструменты:** Docker Compose, nginx
-- **Подход:** Проверять после каждого деплоя
-- **Логи:** Всегда проверять docker logs
-- **Безопасность:** Проверять права доступа
-
----
-
-## 📝 Заметки
-
-- Быстро работает
-- Всегда проверяет результат
-- Предпочитает Docker Compose
+### Commits
+1. `6437ca4` — devops: add /health endpoint for CI/CD (#6)
+2. `6a66e5b` — devops: force rebuild Docker image without cache (#6)
+3. `b0d0fd8` — devops: use GHCR image in docker-compose (#6)
+4. `44eb21b` — devops: restore Docker cache (#6)

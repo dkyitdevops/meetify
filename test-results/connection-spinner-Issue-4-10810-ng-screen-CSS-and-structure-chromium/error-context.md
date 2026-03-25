@@ -1,0 +1,43 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - paragraph [ref=e4]: Подключение к комнате...
+  - generic [ref=e5]:
+    - link "🎥 Meetify" [ref=e6] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e8]:
+      - generic [ref=e10]: "ID: ..."
+      - generic [ref=e11]:
+        - button "📋" [ref=e12] [cursor=pointer]
+        - button "✉️" [ref=e13] [cursor=pointer]
+  - generic [ref=e14]:
+    - generic [ref=e17]:
+      - button "🎤" [ref=e18] [cursor=pointer]
+      - button "📹" [ref=e19] [cursor=pointer]
+      - button "🖥️" [ref=e20] [cursor=pointer]
+      - button "⏺️" [ref=e21] [cursor=pointer]
+      - button "✋" [ref=e22] [cursor=pointer]
+      - button "📊" [ref=e23] [cursor=pointer]
+      - button "🎨" [ref=e24] [cursor=pointer]
+      - button "😊" [ref=e25] [cursor=pointer]
+      - button "👥" [ref=e26] [cursor=pointer]
+      - button "💬" [ref=e27] [cursor=pointer]
+      - button "⚙️" [ref=e28] [cursor=pointer]
+      - button "📞" [ref=e29] [cursor=pointer]
+    - generic [ref=e31]:
+      - generic [ref=e32]: 💬 Чат
+      - generic [ref=e34]:
+        - textbox "Введите сообщение..." [ref=e35]
+        - button "➤" [ref=e36] [cursor=pointer]
+  - option "Без фона" [selected]
+  - option "🔮 Размытие"
+  - option "🏢 Офис"
+  - option "🌿 Природа"
+  - option "🚀 Космос"
+  - option "📚 Библиотека"
+  - option "🖼️ Своя картинка"
+  - option "Высокое (1280x720)"
+  - option "Среднее (854x480)" [selected]
+  - option "Низкое (640x360)"
+```

@@ -2,7 +2,7 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: '*.spec.js',
+  testMatch: '*.test.js',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -21,23 +21,20 @@ module.exports = defineConfig({
     actionTimeout: 30000,
     navigationTimeout: 30000,
     launchOptions: {
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     }
   },
   projects: [
     {
       name: 'chromium',
-<<<<<<< HEAD
-      use: { ...devices['Desktop Chrome'] },
-=======
       use: { 
         ...devices['Desktop Chrome'],
         launchOptions: {
-          executablePath: '/usr/bin/chromium-browser',
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
           args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         }
       },
->>>>>>> master
     },
   ],
 });
