@@ -3,188 +3,556 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meetify - Главная</title>
+    <title>Meetify — Видеосвязь нового поколения</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-            color: #fff; 
+        
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #0f0f2a;
+            --accent-purple: #667eea;
+            --accent-violet: #764ba2;
+            --accent-cyan: #4ecdc4;
+            --glass-bg: rgba(255,255,255,0.03);
+            --glass-border: rgba(255,255,255,0.06);
+            --glass-bg-hover: rgba(255,255,255,0.06);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255,255,255,0.5);
+            --text-muted: rgba(255,255,255,0.3);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* === Mesh gradient background === */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bg-mesh::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(102,126,234,0.15) 0%, transparent 70%);
+            top: -200px;
+            right: -100px;
+            animation: float1 20s ease-in-out infinite;
+        }
+        .bg-mesh::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(78,205,196,0.1) 0%, transparent 70%);
+            bottom: -150px;
+            left: -100px;
+            animation: float2 25s ease-in-out infinite;
+        }
+        .bg-mesh-extra {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(118,75,162,0.12) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: float3 18s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-50px, 30px) scale(1.1); }
+            66% { transform: translate(30px, -20px) scale(0.95); }
+        }
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(40px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 40px) scale(1.1); }
+        }
+        @keyframes float3 {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
+        }
+        
+        /* === Layout === */
+        .page {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        /* === Navigation === */
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 48px;
+        }
+        .nav-logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+        }
+        .nav-logo-glow {
+            position: relative;
+        }
+        .nav-logo-glow::after {
+            content: '';
+            position: absolute;
+            inset: -4px -8px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            opacity: 0.15;
+            filter: blur(12px);
+            border-radius: 8px;
+            z-index: -1;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+        
+        /* === Hero === */
+        .hero {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-        }
-        .container { 
-            max-width: 600px; 
-            width: 90%;
+            padding: 60px 24px 80px;
             text-align: center;
-            padding: 40px;
         }
-        .logo { 
-            font-size: 80px; 
-            margin-bottom: 20px; 
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 100px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            backdrop-filter: blur(12px);
         }
-        h1 { 
-            font-size: 48px; 
-            margin-bottom: 10px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 72px);
+            font-weight: 700;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            max-width: 700px;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .subtitle {
-            color: #888;
-            margin-bottom: 40px;
+        .hero-subtitle {
             font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            line-height: 1.6;
+            margin-bottom: 48px;
+            font-weight: 300;
         }
-        .join-form {
-            background: rgba(255,255,255,0.05);
-            padding: 30px;
-            border-radius: 16px;
-            margin-bottom: 20px;
+        
+        /* === CTA Button === */
+        .cta-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 80px;
         }
-        input { 
-            width: 100%;
-            padding: 16px 20px; 
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            border-radius: 12px; 
-            font-size: 18px; 
-            background: rgba(0,0,0,0.2);
-            color: #fff;
-            margin-bottom: 15px;
-            transition: border-color 0.3s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        input::placeholder {
-            color: #666;
-        }
-        .btn {
-            width: 100%;
-            padding: 16px 24px; 
-            border: none; 
-            border-radius: 12px; 
-            font-size: 18px; 
-            cursor: pointer; 
-            transition: all 0.3s;
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 48px;
+            font-size: 16px;
             font-weight: 600;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        .btn-secondary {
-            background: transparent;
-            color: #667eea;
-            border: 2px solid #667eea;
-            margin-top: 10px;
-        }
-        .btn-secondary:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-        .divider {
-            margin: 30px 0;
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-violet) 100%);
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            overflow: hidden;
+            font-family: inherit;
         }
-        .divider::before {
+        .btn-cta::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: rgba(255,255,255,0.1);
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-purple) 100%);
+            opacity: 0;
+            transition: opacity 0.4s;
         }
-        .divider span {
-            background: #1a1a2e;
-            padding: 0 20px;
-            color: #666;
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(102,126,234,0.3), 0 0 80px rgba(102,126,234,0.1);
+        }
+        .btn-cta:hover::before {
+            opacity: 1;
+        }
+        .btn-cta span,
+        .btn-cta svg {
             position: relative;
+            z-index: 1;
         }
-        .features {
-            display: flex;
+        .btn-cta svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .btn-secondary {
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            padding: 12px 32px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            background: var(--glass-bg);
+            border-color: rgba(255,255,255,0.12);
+        }
+        
+        /* === Join Room Modal === */
+        .join-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            align-items: center;
             justify-content: center;
-            gap: 30px;
-            margin-top: 40px;
-            flex-wrap: wrap;
+            padding: 24px;
         }
-        .feature {
+        .join-overlay.active {
+            display: flex;
+        }
+        .join-modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .join-modal h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .join-modal p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        .join-modal input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 15px;
+            color: #fff;
+            font-family: inherit;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+        .join-modal input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+        .join-modal input::placeholder {
+            color: var(--text-muted);
+        }
+        .join-modal-btns {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .join-modal-btns .btn-cta {
+            flex: 1;
+            justify-content: center;
+            padding: 14px 24px;
+        }
+        .join-modal-btns button:last-child {
+            padding: 14px 24px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .join-modal-btns button:last-child:hover {
+            color: var(--text-primary);
+            background: var(--glass-bg-hover);
+        }
+        
+        /* === Features Grid === */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        .feature-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px 20px;
             text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(12px);
+        }
+        .feature-card:hover {
+            background: var(--glass-bg-hover);
+            border-color: rgba(255,255,255,0.1);
+            transform: translateY(-4px);
         }
         .feature-icon {
-            font-size: 30px;
-            margin-bottom: 10px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 20px;
         }
-        .feature-text {
-            color: #888;
-            font-size: 14px;
+        .feature-icon.purple { background: rgba(102,126,234,0.12); }
+        .feature-icon.cyan { background: rgba(78,205,196,0.12); }
+        .feature-icon.violet { background: rgba(118,75,162,0.12); }
+        .feature-icon.blue { background: rgba(59,130,246,0.12); }
+        .feature-icon.green { background: rgba(52,211,153,0.12); }
+        
+        .feature-card h4 {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .feature-card p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
+        /* === Footer === */
+        .footer {
+            padding: 32px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: var(--text-secondary);
+        }
+        
+        /* === Responsive === */
+        @media (max-width: 768px) {
+            .nav { padding: 16px 20px; }
+            .nav-links { display: none; }
+            .hero { padding: 40px 20px 60px; }
+            .hero h1 { letter-spacing: -1px; }
+            .hero-subtitle { font-size: 16px; margin-bottom: 36px; }
+            .features {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .feature-card:last-child {
+                grid-column: 1 / -1;
+                max-width: 200px;
+                margin: 0 auto;
+            }
+            .footer { 
+                flex-direction: column; 
+                gap: 16px; 
+                padding: 24px 20px;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">🎥</div>
-        <h1>Meetify</h1>
-        <p class="subtitle">Видеоконференции без регистрации</p>
+    <div class="bg-mesh"></div>
+    <div class="bg-mesh-extra"></div>
+    
+    <div class="page">
+        <nav class="nav">
+            <div class="nav-logo nav-logo-glow">Meetify</div>
+            <div class="nav-links">
+                <a href="#">Возможности</a>
+                <a href="#">Безопасность</a>
+                <a href="#">О проекте</a>
+            </div>
+        </nav>
         
-        <div class="join-form">
-            <input type="text" id="roomId" placeholder="Введите ID комнаты" maxlength="20">
-            <input type="password" id="roomPassword" placeholder="Пароль (если есть)" style="display: none;">
-            <button class="btn btn-primary" onclick="joinRoom()">🔑 Присоединиться</button>
-            
-            <div class="divider"><span>или</span></div>
-            
-            <button class="btn btn-secondary" onclick="createRoom()">➕ Создать новую комнату</button>
-            
-            <div id="createOptions" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <input type="password" id="newRoomPassword" placeholder="Установить пароль (опционально)">
-                <button class="btn btn-primary" onclick="createRoomWithPassword()" style="margin-top: 10px;">🚀 Создать комнату</button>
-                <button class="btn btn-secondary" onclick="cancelCreate()" style="margin-top: 10px;">Отмена</button>
+        <main class="hero">
+            <div class="hero-badge">
+                <div class="hero-badge-dot"></div>
+                Без регистрации • Без установки
             </div>
-        </div>
+            
+            <h1>Видеосвязь<br><span>нового поколения</span></h1>
+            
+            <p class="hero-subtitle">
+                Создайте комнату в один клик. Поделитесь ссылкой. Начните общение — без аккаунтов, без загрузок.
+            </p>
+            
+            <div class="cta-wrapper">
+                <button class="btn-cta" onclick="createRoom()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    <span>Начать конференцию</span>
+                </button>
+                <button class="btn-secondary" onclick="openJoinModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    Войти по коду
+                </button>
+            </div>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon purple">🎥</div>
+                    <h4>HD Видео</h4>
+                    <p>WebRTC напрямую</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon cyan">🔒</div>
+                    <h4>Приватность</h4>
+                    <p>E2E шифрование</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon violet">💬</div>
+                    <h4>Чат</h4>
+                    <p>В реальном времени</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon blue">🖥️</div>
+                    <h4>Демонстрация</h4>
+                    <p>Трансляция экрана</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon green">⚡</div>
+                    <h4>Мгновенно</h4>
+                    <p>0 секунд на старт</p>
+                </div>
+            </div>
+        </main>
         
-        <div class="features">
-            <div class="feature">
-                <div class="feature-icon">🔒</div>
-                <div class="feature-text">Приватно</div>
+        <footer class="footer">
+            <span>© 2026 Meetify</span>
+            <div class="footer-links">
+                <a href="#">Конфиденциальность</a>
+                <a href="#">GitHub</a>
             </div>
-            <div class="feature">
-                <div class="feature-icon">⚡</div>
-                <div class="feature-text">Быстро</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">💬</div>
-                <div class="feature-text">С чатом</div>
+        </footer>
+    </div>
+    
+    <!-- Join Modal -->
+    <div class="join-overlay" id="joinOverlay">
+        <div class="join-modal">
+            <h3>Войти в комнату</h3>
+            <p>Введите код комнаты, чтобы присоединиться к конференции</p>
+            <input type="text" id="roomId" placeholder="Код комнаты" maxlength="20" autocomplete="off">
+            <input type="password" id="roomPassword" placeholder="Пароль (если есть)">
+            <div class="join-modal-btns">
+                <button class="btn-cta" onclick="joinRoom()">
+                    <span>Подключиться</span>
+                </button>
+                <button onclick="closeJoinModal()">Отмена</button>
             </div>
         </div>
     </div>
     
     <script>
         function createRoom() {
-            document.getElementById('createOptions').style.display = 'block';
-        }
-        
-        function cancelCreate() {
-            document.getElementById('createOptions').style.display = 'none';
-        }
-        
-        function createRoomWithPassword() {
             var roomId = Math.random().toString(36).substring(2, 9);
-            var password = document.getElementById('newRoomPassword').value;
-            
-            // Сохраняем пароль в sessionStorage (временно)
-            if (password) {
-                sessionStorage.setItem('room_' + roomId + '_password', password);
-            }
-            
-            window.location.href = '/room.html?id=' + roomId + (password ? '&hasPassword=1' : '');
+            window.location.href = '/room.html?id=' + roomId;
+        }
+        
+        function openJoinModal() {
+            document.getElementById('joinOverlay').classList.add('active');
+            setTimeout(() => document.getElementById('roomId').focus(), 100);
+        }
+        
+        function closeJoinModal() {
+            document.getElementById('joinOverlay').classList.remove('active');
+            document.getElementById('roomId').value = '';
+            document.getElementById('roomPassword').value = '';
         }
         
         function joinRoom() {
@@ -192,25 +560,28 @@
             var password = document.getElementById('roomPassword').value;
             
             if (!roomId) {
-                alert('Введите ID комнаты');
+                document.getElementById('roomId').style.borderColor = '#ef4444';
+                document.getElementById('roomId').focus();
                 return;
             }
             
             window.location.href = '/room.html?id=' + encodeURIComponent(roomId) + (password ? '&pwd=' + encodeURIComponent(password) : '');
         }
         
-        // Показываем поле пароля если в URL есть hasPassword
-        if (window.location.search.includes('hasPassword=1')) {
-            document.getElementById('roomPassword').style.display = 'block';
-        }
-        
-        // Enter для входа
-        document.getElementById('roomId').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') joinRoom();
+        // Close modal on overlay click
+        document.getElementById('joinOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeJoinModal();
         });
-    </script>
-        document.getElementById('roomId').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') joinRoom();
+        
+        // Close modal on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeJoinModal();
+            if (e.key === 'Enter' && document.getElementById('joinOverlay').classList.contains('active')) joinRoom();
+        });
+        
+        // Reset input border on typing
+        document.getElementById('roomId').addEventListener('input', function() {
+            this.style.borderColor = '';
         });
     </script>
 </body>
