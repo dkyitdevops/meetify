@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meetify - Комната</title>
-    <style>
+        <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
@@ -36,6 +36,16 @@
             background: var(--glass-bg);
             border-bottom: 1px solid var(--glass-border);
             backdrop-filter: blur(12px);
+        }
+        .nav-logo-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .nav-logo-icon {
+            display: flex;
+            align-items: center;
         }
         .logo {
             font-size: 20px;
@@ -88,19 +98,21 @@
             display: flex;
             flex-direction: column;
             transition: flex 0.3s;
+            min-height: 0;
         }
         
         .video-section.expanded {
             flex: 3;
         }
         
-        /* Боковая панель участников */
+        /* Sidebar */
         .sidebar {
-            width: 300px;
+            width: 280px;
+            min-width: 280px;
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
-            margin-right: 20px;
+            margin-right: 16px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -108,16 +120,94 @@
         }
         
         .sidebar-header {
-            padding: 20px;
+            padding: 16px 20px;
             background: var(--glass-bg-hover);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 14px;
             border-bottom: 1px solid var(--glass-border);
         }
+        .sidebar-header svg {
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+        }
         
-        /* Чат можно скрыть */
+        /* Participant list */
+        .participants-list {
+            list-style: none;
+            padding: 12px;
+            margin: 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+        .participant-item:hover {
+            background: var(--glass-bg-hover);
+        }
+        .participant-item.you {
+            background: rgba(102, 126, 234, 0.06);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        .participant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .participant-avatar.gradient-1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .participant-avatar.gradient-2 { background: linear-gradient(135deg, #4ecdc4, #44bd32); }
+        .participant-avatar.gradient-3 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .participant-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .participant-name {
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .participant-name .you-tag {
+            font-size: 11px;
+            color: var(--accent-purple);
+            margin-left: 6px;
+        }
+        .participant-status {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .participant-mic {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+        .participant-mic.muted {
+            color: #ef4444;
+        }
+        
         .chat-section {
             flex: 1;
             min-width: 300px;
@@ -190,64 +280,7 @@
             background: #667eea;
             color: #fff;
         }
-
-        /* Реакции */
-        .reactions-panel {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(22, 33, 62, 0.95);
-            border-radius: 50px;
-            padding: 10px 20px;
-            display: none;
-            gap: 10px;
-            z-index: 200;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        .reactions-panel.active {
-            display: flex;
-        }
-
-        .reaction-btn {
-            font-size: 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: all 0.2s;
-        }
-
-        .reaction-btn:hover {
-            transform: scale(1.3);
-            background: rgba(255,255,255,0.1);
-        }
-
-        .reaction-float {
-            position: fixed;
-            font-size: 40px;
-            pointer-events: none;
-            animation: floatUp 2s ease-out forwards;
-            z-index: 300;
-        }
-
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(0.5);
-            }
-            50% {
-                transform: translateY(-100px) scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-200px) scale(1);
-            }
-        }
-
+        
         .whiteboard-toolbar .close-btn {
             margin-left: auto;
             background: #ff4444;
@@ -260,57 +293,104 @@
             cursor: crosshair;
         }
         
-        /* Стили для опросов */
+        /* Reactions */
+        .reactions-panel {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: none;
+            gap: 10px;
+            z-index: 200;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+        }
+        .reactions-panel.active {
+            display: flex;
+        }
+        .reaction-btn {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .reaction-btn:hover {
+            transform: scale(1.3);
+            background: rgba(255,255,255,0.1);
+        }
+        .reaction-float {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+            z-index: 300;
+            text-align: center;
+        }
+        .reaction-name {
+            display: block;
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+            margin-top: -4px;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.5); }
+            50% { transform: translateY(-100px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-200px) scale(1); }
+        }
+        
+        /* Polls */
         .poll-option {
             width: 100%;
             padding: 12px;
             margin-bottom: 10px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            background: var(--glass-bg);
             color: #fff;
             font-size: 14px;
             box-sizing: border-box;
         }
-        
         .poll-option-btn {
             width: 100%;
             padding: 15px;
             margin-bottom: 10px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid var(--accent-purple);
+            border-radius: 10px;
+            background: rgba(102, 126, 234, 0.1);
             color: #fff;
             font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
         }
-        
         .poll-option-btn:hover {
-            background: rgba(102, 126, 234, 0.4);
+            background: rgba(102, 126, 234, 0.2);
         }
-        
         .poll-option-btn.voted {
-            background: #22c55e;
-            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
         }
-        
         .poll-result-bar {
             height: 30px;
-            background: rgba(102, 126, 234, 0.3);
-            border-radius: 8px;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 10px;
             margin-bottom: 10px;
             position: relative;
             overflow: hidden;
         }
-        
         .poll-result-fill {
             height: 100%;
-            background: #667eea;
-            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet));
+            border-radius: 10px;
             transition: width 0.3s;
         }
-        
         .poll-result-text {
             position: absolute;
             top: 50%;
@@ -319,29 +399,29 @@
             font-size: 12px;
         }
         
+        /* Video grid */
         #videos { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
-            gap: 20px; 
+            gap: 4px; 
             flex: 1;
-            overflow-y: auto;
-            align-content: start;
+            min-height: 0;
+            overflow: hidden;
+            padding: 4px;
         }
         
         video { 
             width: 100%; 
-            aspect-ratio: 16 / 9;
-            min-height: 300px;
-            border-radius: 12px; 
-            background: #16213e;
+            height: 100%;
+            min-height: 0;
+            border-radius: 8px; 
+            background: var(--bg-secondary);
             object-fit: cover;
         }
         
         .local-video { 
-            border: 3px solid #667eea; 
+            border: 2px solid var(--accent-purple); 
         }
         
-        /* Иконка поднятой руки на видео */
         .hand-raised-icon {
             position: absolute;
             top: 10px;
@@ -366,82 +446,135 @@
         
         .video-wrapper {
             position: relative;
-            display: inline-block;
+            display: flex;
+            min-height: 0;
         }
         
-        /* Контролы */
+        /* Controls */
         .controls { 
             display: flex; 
             justify-content: center; 
-            gap: 15px; 
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 16px;
+            align-items: center;
+            gap: 0; 
+            margin-top: 16px;
+            padding: 10px 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .controls-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 4px;
+        }
+        
+        .controls-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--glass-border);
+            margin: 0 8px;
         }
         
         .control-btn { 
-            width: 60px; 
-            height: 60px; 
-            border-radius: 50%; 
-            border: none;
+            width: 46px; 
+            height: 46px; 
+            border-radius: 12px; 
+            border: 1px solid var(--glass-border);
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 24px;
-            background: #667eea;
-            color: #fff;
+            background: var(--glass-bg);
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             position: relative;
+        }
+        
+        .control-btn:hover { 
+            background: var(--glass-bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .control-btn.muted { 
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.25);
+            color: #ef4444;
+        }
+        
+        .control-btn.muted:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        
+        .control-btn.leave {
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.25);
+            color: #dc2626;
+            margin-left: 4px;
+        }
+        
+        .control-btn.leave:hover {
+            background: rgba(220, 38, 38, 0.2);
+        }
+        
+        .control-btn.recording {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.25);
+            color: #ef4444;
+            animation: pulse 1.5s infinite;
         }
         
         /* Tooltip */
         .control-btn::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: 70px;
+            bottom: calc(100% + 8px);
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 8px 12px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 6px 12px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 12px;
             white-space: nowrap;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s;
+            transition: all 0.2s;
             pointer-events: none;
+            border: 1px solid var(--glass-border);
         }
-        
-        .control-btn::before {
-            content: '';
-            position: absolute;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 8px solid transparent;
-            border-top-color: rgba(0, 0, 0, 0.8);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-        }
-        
-        .control-btn:hover::after,
-        .control-btn:hover::before {
+        .control-btn:hover::after {
             opacity: 1;
             visibility: visible;
         }
         
-        /* Модальное окно настроек */
+        /* Participant count badge */
+        .control-btn .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            background: var(--accent-purple);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            line-height: 1;
+        }
+        
+        /* Modals */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -450,289 +583,330 @@
             visibility: hidden;
             transition: all 0.3s;
         }
-        
         .modal-overlay.active {
             opacity: 1;
             visibility: visible;
         }
-        
         .modal {
-            background: #16213e;
-            border-radius: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             width: 90%;
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
+            animation: modalIn 0.3s ease;
         }
-        
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
         .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--glass-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
         .modal-header h2 {
             margin: 0;
-            font-size: 20px;
+            font-size: 18px;
+            font-weight: 600;
         }
-        
         .modal-close {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 18px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
-        
+        .modal-close:hover {
+            background: var(--glass-bg-hover);
+            color: var(--text-primary);
+        }
         .modal-body {
-            padding: 20px;
+            padding: 24px;
         }
-        
         .setting-item {
             margin-bottom: 20px;
         }
-        
         .setting-item label {
             display: block;
             margin-bottom: 8px;
-            color: #888;
-            font-size: 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
         }
-        
-        .setting-item input[type="text"] {
+        .setting-item input[type="text"],
+        .setting-item select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 8px;
-            background: rgba(0,0,0,0.3);
+            padding: 12px 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            background: var(--glass-bg);
             color: #fff;
-            font-size: 16px;
-        }
-        
-        .setting-item input[type="text"]:focus {
+            font-size: 14px;
             outline: none;
-            border-color: #667eea;
+            transition: border-color 0.3s;
+            font-family: inherit;
         }
-        
+        .setting-item input[type="text"]:focus,
+        .setting-item select:focus {
+            border-color: var(--accent-purple);
+        }
         .modal-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 16px 24px;
+            border-top: 1px solid var(--glass-border);
             display: flex;
             justify-content: flex-end;
             gap: 10px;
         }
-        
         .btn-primary {
-            background: #667eea;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet));
             color: #fff;
             border: none;
             padding: 12px 24px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 16px;
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            color: #888;
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 8px;
             font-size: 14px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
+            font-weight: 500;
             transition: all 0.3s;
-            pointer-events: none;
+            font-family: inherit;
         }
-        
-        .control-btn::before {
-            content: '';
-            position: absolute;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 8px solid transparent;
-            border-top-color: rgba(0, 0, 0, 0.8);
-            opacity: 0;
-            visibility: hidden;
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.3);
+        }
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
             transition: all 0.3s;
+            font-family: inherit;
+        }
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            background: var(--glass-bg-hover);
         }
         
-        .control-btn:hover::after,
-        .control-btn:hover::before {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .control-btn:hover { 
-            background: #764ba2;
-            transform: scale(1.05);
-        }
-        
-        .control-btn.muted { 
-            background: #ef4444; 
-        }
-        
-        .control-btn.leave {
-            background: #dc2626;
-        }
-        
-        .control-btn.leave:hover {
-            background: #b91c1c;
-        }
-        
-        /* Чат */
-        .chat-section { 
-            flex: 1; 
-            min-width: 300px;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-        }
-        
+        /* Chat */
         .chat-container { 
-            background: #16213e; 
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
             border-radius: 16px; 
             flex: 1;
             display: flex; 
             flex-direction: column;
             overflow: hidden;
+            backdrop-filter: blur(12px);
         }
-        
         .chat-header { 
-            padding: 20px; 
-            background: #0f3460; 
-            font-weight: bold;
+            padding: 16px 20px; 
+            background: var(--glass-bg-hover); 
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 10px;
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 14px;
         }
-        
         .chat-messages { 
             flex: 1; 
             overflow-y: auto; 
-            padding: 20px;
+            padding: 16px;
         }
-        
         .chat-message { 
-            margin-bottom: 15px; 
-            padding: 12px 16px; 
-            background: #1a1a2e; 
+            margin-bottom: 10px; 
+            padding: 10px 14px; 
+            background: rgba(255,255,255,0.02); 
+            border: 1px solid var(--glass-border);
             border-radius: 12px;
             animation: fadeIn 0.3s ease;
         }
-        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
         .chat-message .author { 
-            font-weight: bold; 
-            color: #667eea; 
+            font-weight: 600; 
+            color: var(--accent-purple); 
             font-size: 12px;
             margin-bottom: 4px;
         }
-        
         .chat-message .text { 
             word-break: break-word;
             line-height: 1.4;
+            font-size: 14px;
         }
-        
         .chat-message.system {
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(102, 126, 234, 0.05);
+            border-color: rgba(102, 126, 234, 0.1);
             font-style: italic;
-            color: #888;
+            color: var(--text-secondary);
         }
-        
         .chat-input { 
             display: flex; 
-            padding: 20px;
+            padding: 16px;
             gap: 10px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid var(--glass-border);
         }
-        
         .chat-input input { 
             flex: 1;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.3);
+            padding: 10px 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            background: var(--glass-bg);
             color: #fff;
-            font-size: 16px;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.3s;
         }
-        
         .chat-input input::placeholder {
-            color: #666;
+            color: var(--text-muted);
         }
-        
         .chat-input input:focus {
-            outline: 2px solid #667eea;
+            border-color: var(--accent-purple);
         }
-        
         .chat-input button { 
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 12px;
-            background: #667eea;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet));
             color: #fff;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-family: inherit;
         }
-        
         .chat-input button:hover {
-            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.3);
         }
         
-        /* Подключение */
+        /* Connecting screen */
         .connecting-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #1a1a2e;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1000;
         }
-        
         .connecting-screen.hidden {
             display: none !important;
         }
-        
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(102, 126, 234, 0.3);
-            border-top-color: #667eea;
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--glass-border);
+            border-top-color: var(--accent-purple);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
-        
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
         .hidden { display: none !important; }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 16px;
+            }
+            .nav-logo-link span {
+                display: none;
+            }
+            .room-info span, .room-info div:first-child {
+                display: none;
+            }
+            .main-content {
+                flex-direction: column;
+                padding: 12px;
+                gap: 12px;
+                height: calc(100vh - 120px);
+            }
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+                max-height: 200px;
+                margin-right: 0;
+                order: 3;
+            }
+            .chat-section {
+                min-width: 100%;
+                max-width: 100%;
+                max-height: 250px;
+                order: 2;
+            }
+            .video-section {
+                order: 1;
+                flex: 1 !important;
+            }
+            #videos {
+                grid-template-columns: 1fr !important;
+            }
+            video {
+                min-height: 0;
+                border-radius: 6px;
+            }
+            .controls {
+                gap: 0;
+                padding: 8px 10px;
+                border-radius: 16px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .controls-group {
+                gap: 6px;
+            }
+            .control-btn {
+                width: 40px;
+                height: 40px;
+            }
+            .control-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            .controls-divider {
+                height: 24px;
+                margin: 0 4px;
+            }
+            .chat-container {
+                border-radius: 12px;
+            }
+            .chat-header {
+                padding: 12px 16px;
+            }
+            .chat-messages {
+                padding: 12px;
+            }
+            .chat-input {
+                padding: 12px;
+            }
+            .modal {
+                width: 95%;
+                border-radius: 16px;
+            }
+            .modal-body {
+                padding: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -741,12 +915,53 @@
         <div class="spinner"></div>
         <p>Подключение к комнате...</p>
     </div>
+
+    <!-- Prejoin Screen -->
+    <div id="prejoinScreen" style="position: fixed; inset: 0; background: var(--bg-primary); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 24px;">
+        <div style="max-width: 480px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 32px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#prejoinLogoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <defs><linearGradient id="prejoinLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#4ecdc4"/></linearGradient></defs>
+                    <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+                <span style="font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #667eea, #4ecdc4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Meetify</span>
+            </div>
+            <h2 style="font-size: 24px; font-weight: 600; margin-bottom: 6px;">Готовы к звонку?</h2>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">Проверьте камеру и микрофон перед входом</p>
+            <video id="previewVideo" autoplay muted playsinline style="width: 100%; max-height: 240px; border-radius: 16px; background: #111; border: 1px solid var(--glass-border); margin-bottom: 16px;"></video>
+            <div style="display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 24px;">
+                <button id="micToggle" onclick="togglePreviewMic(this)" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+                <button id="camToggle" onclick="togglePreviewCam(this)" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: #fff; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                </button>
+            </div>
+            <input type="text" id="userName" placeholder="Ваше имя" maxlength="30" style="width: 100%; padding: 14px 18px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; font-size: 15px; color: #fff; font-family: inherit; margin-bottom: 10px; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='var(--glass-border)'">
+            <input type="text" id="roomName" placeholder="Название комнаты (необязательно)" maxlength="100" style="width: 100%; padding: 14px 18px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; font-size: 15px; color: #fff; font-family: inherit; margin-bottom: 10px; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='var(--glass-border)'">
+            <input type="text" id="roomDesc" placeholder="Описание комнаты (необязательно)" maxlength="200" style="width: 100%; padding: 14px 18px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; font-size: 15px; color: #fff; font-family: inherit; margin-bottom: 16px; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='var(--glass-border)'">
+            <button onclick="enterRoom()" id="prejoinSubmitBtn" style="width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet)); border: none; border-radius: 14px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: inherit;">
+                Подключиться
+            </button>
+        </div>
+    </div>
+    
+    <!-- Room Content (hidden until prejoin complete) -->
+    <div id="roomContent" style="display: none;">
     
     <!-- Отображение ошибок -->
     <div id="errorDisplay" style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 12px 24px; border-radius: 8px; display: none; z-index: 3000; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
     
     <div class="header">
-        <a href="/" class="logo">🎥 Meetify</a>
+        <a href="/" class="nav-logo-link">
+                <div class="nav-logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#roomLogoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <defs><linearGradient id="roomLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#4ecdc4"/></linearGradient></defs>
+                        <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <span class="logo">Meetify</span>
+            </a>
         
         <!-- Название комнаты по центру -->
         <div style="flex: 1; text-align: center;">
@@ -759,8 +974,8 @@
                 <span style="font-size: 11px; color: #666;">ID: <span class="room-id" id="roomIdDisplay">...</span></span>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="copy-btn" onclick="copyRoomId()">📋</button>
-                <button class="copy-btn" onclick="showInviteModal()" style="background: #22c55e;">✉️</button>
+                <button class="copy-btn" onclick="copyRoomId()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                <button class="copy-btn" onclick="showInviteModal()" style="background: #22c55e;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
             </div>
         </div>
     </div>
@@ -768,17 +983,17 @@
     <!-- Whiteboard -->
     <div class="whiteboard-container" id="whiteboardContainer">
         <div class="whiteboard-toolbar">
-            <span style="color: #333; font-weight: bold; margin-right: 10px;">🎨 Whiteboard</span>
+            <span style="color: #333; font-weight: bold; margin-right: 10px; display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg> Whiteboard</span>
             <button class="color-btn active" style="background: #000;" onclick="setPenColor('#000000')" title="Чёрный"></button>
             <button class="color-btn" style="background: #ff0000;" onclick="setPenColor('#ff0000')" title="Красный"></button>
             <button class="color-btn" style="background: #00ff00;" onclick="setPenColor('#00ff00')" title="Зелёный"></button>
             <button class="color-btn" style="background: #0000ff;" onclick="setPenColor('#0000ff')" title="Синий"></button>
             <button class="color-btn" style="background: #ffff00;" onclick="setPenColor('#ffff00')" title="Жёлтый"></button>
             <div style="width: 1px; height: 30px; background: #ccc; margin: 0 10px;"></div>
-            <button class="tool-btn active" id="penTool" onclick="setTool('pen')" title="Карандаш">✏️</button>
-            <button class="tool-btn" id="eraserTool" onclick="setTool('eraser')" title="Ластик">🧹</button>
-            <button class="tool-btn" onclick="clearWhiteboard()" title="Очистить">🗑️</button>
-            <button class="close-btn" onclick="toggleWhiteboard()">✕ Закрыть</button>
+            <button class="tool-btn active" id="penTool" onclick="setTool('pen')" title="Карандаш"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="2" x2="22" y2="6"/><path d="M7.5 20.5 19 9l-4-4L3.5 16.5 2 22z"/></svg></button>
+            <button class="tool-btn" id="eraserTool" onclick="setTool('eraser')" title="Ластик"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.8 1.4c.8-.8 2-.8 2.8 0l5 5c.8.8.8 2 0 2.8L11 20"/></svg></button>
+            <button class="tool-btn" onclick="clearWhiteboard()" title="Очистить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            <button class="close-btn" onclick="toggleWhiteboard()">Закрыть</button>
         </div>
         <canvas class="whiteboard-canvas" id="whiteboardCanvas"></canvas>
     </div>
@@ -797,13 +1012,22 @@
         <!-- Боковая панель участников -->
         <div class="sidebar" id="participantsSidebar" style="display: none;">
             <div class="sidebar-header">
-                <span>👥 Участники</span>
-                <button onclick="toggleParticipants()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Участники
+                </span>
+                <button onclick="toggleParticipants()" style="background: var(--glass-bg); border: 1px solid var(--glass-border); width: 28px; height: 28px; border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.2s;" onmouseover="this.style.background='var(--glass-bg-hover)'" onmouseout="this.style.background='var(--glass-bg)'">&times;</button>
             </div>
-            <ul id="participantsList" style="list-style: none; padding: 15px; margin: 0; overflow-y: auto; flex: 1;">
-                <li style="padding: 10px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                    <span>🎥</span>
-                    <span>Вы</span>
+            <ul id="participantsList" class="participants-list">
+                <li class="participant-item you">
+                    <div class="participant-avatar gradient-1">Вы</div>
+                    <div class="participant-info">
+                        <div class="participant-name">Вы<span class="you-tag">— вы</span></div>
+                        <div class="participant-status">Организатор</div>
+                    </div>
+                    <div class="participant-mic">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                    </div>
                 </li>
             </ul>
         </div>
@@ -812,31 +1036,47 @@
             <div id="videos"></div>
             
             <div class="controls">
-                <button class="control-btn" id="micBtn" onclick="toggleMic()" data-tooltip="Микрофон">🎤</button>
-                <button class="control-btn" id="camBtn" onclick="toggleCam()" data-tooltip="Камера">📹</button>
-                <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" data-tooltip="Демонстрация экрана">🖥️</button>
-                <button class="control-btn" id="recordBtn" onclick="toggleRecording()" data-tooltip="Запись">⏺️</button>
-                <button class="control-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" data-tooltip="Поднять руку">✋</button>
-                <button class="control-btn" id="pollBtn" onclick="openPollModal()" data-tooltip="Опрос">📊</button>
-                <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" data-tooltip="Whiteboard">🎨</button>
-                <button class="control-btn" id="reactionBtn" onclick="toggleReactions()" data-tooltip="Реакции">😊</button>
-                <button class="control-btn" id="participantsBtn" onclick="toggleParticipants()" data-tooltip="Участники">👥</button>
-                <button class="control-btn" id="chatBtn" onclick="toggleChat()" data-tooltip="Чат">💬</button>
-                <button class="control-btn" id="settingsBtn" onclick="openSettings()" data-tooltip="Настройки">⚙️</button>
-                <button class="control-btn leave" onclick="leaveRoom()" data-tooltip="Выйти из комнаты">📞</button>
+                <!-- Группа 1: Медиа -->
+                <div class="controls-group">
+                    <button class="control-btn" id="micBtn" onclick="toggleMic()" data-tooltip="Микрофон"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                    <button class="control-btn" id="camBtn" onclick="toggleCam()" data-tooltip="Камера"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                    <button class="control-btn" id="screenBtn" onclick="toggleScreenShare()" data-tooltip="Демонстрация экрана"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
+                </div>
+                
+                <div class="controls-divider"></div>
+                
+                <!-- Группа 2: Комната -->
+                <div class="controls-group">
+                    <button class="control-btn" id="participantsBtn" onclick="toggleParticipants()" data-tooltip="Участники"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="badge" id="participantCount">1</span></button>
+                    <button class="control-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" data-tooltip="Поднять руку"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></button>
+                    <button class="control-btn" id="reactionBtn" onclick="toggleReactions()" data-tooltip="Реакции"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+                    <button class="control-btn" id="pollBtn" onclick="openPollModal()" data-tooltip="Опрос"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+                    <button class="control-btn" id="whiteboardBtn" onclick="toggleWhiteboard()" data-tooltip="Whiteboard"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></button>
+                    <button class="control-btn" id="chatBtn" onclick="toggleChat()" data-tooltip="Чат"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </div>
+                
+                <div class="controls-divider"></div>
+                
+                <!-- Группа 3: Действия -->
+                <div class="controls-group">
+                    <button class="control-btn" id="settingsBtn" onclick="openSettings()" data-tooltip="Настройки"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                    <button class="control-btn" id="recordBtn" onclick="toggleRecording()" data-tooltip="Запись"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    <button class="control-btn leave" onclick="leaveRoom()" data-tooltip="Выйти"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 2.59 3.4z"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+                </div>
             </div>
         </div>
         
         <div class="chat-section" id="chatSection">
             <div class="chat-container">
                 <div class="chat-header">
-                    💬 Чат
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Чат
                 </div>
                 <div class="chat-messages" id="chatMessages"></div>
                 
                 <div class="chat-input">
                     <input type="text" id="chatInput" placeholder="Введите сообщение..." maxlength="500">
-                    <button onclick="sendMessage()">➤</button>
+                    <button onclick="sendMessage()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
                 </div>
             </div>
         </div>
@@ -846,7 +1086,7 @@
     <div class="modal-overlay" id="pollModal">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
-                <h2>📊 Опрос</h2>
+                <h2 style="display: flex; align-items: center; gap: 10px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Опрос</h2>
                 <button class="modal-close" onclick="closePollModal()">&times;</button>
             </div>
             
@@ -896,7 +1136,7 @@
             
             <div class="modal-body">
                 <div class="setting-item">
-                    <label>🎨 Виртуальный фон</label>
+                    <label style="display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg> Виртуальный фон</label>
                     <select id="virtualBackground" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(102, 126, 234, 0.3);">
                         <option value="none" selected>Без фона</option>
                         <option value="blur">🔮 Размытие</option>
@@ -942,12 +1182,12 @@
     <div class="modal-overlay" id="participantsModal">
         <div class="modal" style="max-width: 400px;">
             <div class="modal-header">
-                <h2>👥 Участники комнаты</h2>
+                <h2 style="display: flex; align-items: center; gap: 10px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Участники комнаты</h2>
                 <button class="modal-close" onclick="closeParticipantsModal()">&times;</button>
             </div>
             
             <div class="modal-body">
-                <ul id="participantsList" style="list-style: none; padding: 0;">
+                <ul id="participantsList" class="participants-list">
                     <li style="padding: 10px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; margin-bottom: 10px;">
                         <strong>Вы</strong> (Вы)
                     </li>
@@ -964,7 +1204,7 @@
     <div class="modal-overlay" id="inviteModal">
         <div class="modal" style="max-width: 400px;">
             <div class="modal-header">
-                <h2>✉️ Пригласить в комнату</h2>
+                <h2 style="display: flex; align-items: center; gap: 10px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Пригласить в комнату</h2>
                 <button class="modal-close" onclick="closeInviteModal()">&times;</button>
             </div>
             
@@ -972,7 +1212,7 @@
                 <div class="setting-item">
                     <label>🔗 Ссылка на комнату</label>
                     <input type="text" id="inviteLink" readonly style="background: rgba(0,0,0,0.3);">
-                    <button class="btn-primary" onclick="copyInviteLink()" style="width: 100%; margin-top: 10px;">📋 Копировать ссылку</button>
+                    <button class="btn-primary" onclick="copyInviteLink()" style="width: 100%; margin-top: 10px;">Копировать ссылку</button>
                 </div>
                 
                 <div class="divider"><span>или</span></div>
@@ -982,7 +1222,7 @@
                     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
                         <button class="btn-secondary" onclick="shareTelegram()" style="flex: 1;">📨 Telegram</button>
                         <button class="btn-secondary" onclick="shareEmail()" style="flex: 1;">📧 Email</button>
-                        <button class="btn-secondary" onclick="shareWhatsApp()" style="flex: 1;">💬 WhatsApp</button>
+                        <button class="btn-secondary" onclick="shareWhatsApp()" style="flex: 1;">WhatsApp</button>
                     </div>
                 </div>
             </div>
@@ -1035,31 +1275,6 @@
             }
         }
         
-        function enterRoom() {
-            log('enterRoom called');
-            
-            // Gather settings from prejoin form
-            const settings = {
-                name: document.getElementById('userName')?.value || 'Гость',
-                micEnabled: document.getElementById('micToggle')?.checked !== false,
-                camEnabled: document.getElementById('camToggle')?.checked !== false
-            };
-            
-            window.prejoinSettings = settings;
-            log('prejoinSettings:', window.prejoinSettings);
-            
-            // Hide prejoin screen, show room
-            const prejoinScreen = document.getElementById('prejoinScreen');
-            const roomContent = document.getElementById('roomContent');
-            
-            if (prejoinScreen) prejoinScreen.style.display = 'none';
-            if (roomContent) roomContent.style.display = 'block';
-            
-            // Dispatch event for room.js
-            log('Sending prejoinComplete');
-            document.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
-        }
-        
         function showError(message) {
             const errorDiv = document.getElementById('errorDisplay');
             if (errorDiv) {
@@ -1071,5 +1286,84 @@
     </script>
     
     <script src="room.js"></script>
+    
+    <script>
+    // Prejoin toggle functions
+    let previewStream = null;
+    let previewMicOn = true;
+    let previewCamOn = true;
+    
+    async function initPreview() {
+        try {
+            previewStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const previewVideo = document.getElementById('previewVideo');
+            if (previewVideo) previewVideo.srcObject = previewStream;
+        } catch (err) {
+            console.error('Preview getUserMedia failed:', err);
+        }
+    }
+    
+    function togglePreviewMic(btn) {
+        previewMicOn = !previewMicOn;
+        btn.innerHTML = previewMicOn 
+            ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>'
+            : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .76-.12 1.49-.34 2.18"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+        btn.style.background = previewMicOn ? 'var(--glass-bg)' : 'rgba(239,68,68,0.15)';
+        btn.style.borderColor = previewMicOn ? 'var(--glass-border)' : 'rgba(239,68,68,0.3)';
+        if (previewStream) {
+            previewStream.getAudioTracks().forEach(t => t.enabled = previewMicOn);
+        }
+    }
+    
+    function togglePreviewCam(btn) {
+        previewCamOn = !previewCamOn;
+        btn.innerHTML = previewCamOn
+            ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'
+            : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 9V7l-4.26-4.26"/><path d="M15 5.12L1 12l4 1 2 4 6.88-14"/></svg>';
+        btn.style.background = previewCamOn ? 'var(--glass-bg)' : 'rgba(239,68,68,0.15)';
+        btn.style.borderColor = previewCamOn ? 'var(--glass-border)' : 'rgba(239,68,68,0.3)';
+        if (previewStream) {
+            previewStream.getVideoTracks().forEach(t => t.enabled = previewCamOn);
+        }
+    }
+    
+    function enterRoom() {
+        const settings = {
+            camera: previewCamOn,
+            microphone: previewMicOn,
+            name: document.getElementById('userName').value || 'Гость',
+            stream: previewStream
+        };
+        
+        // Save room metadata
+        const roomName = document.getElementById('roomName').value.trim();
+        const roomDesc = document.getElementById('roomDesc').value.trim();
+        if (roomName || roomDesc) {
+            sessionStorage.setItem('room_' + roomId + '_data', JSON.stringify({ name: roomName, description: roomDesc }));
+        }
+        
+        document.getElementById('prejoinScreen').style.display = 'none';
+        document.getElementById('roomContent').style.display = 'block';
+        document.getElementById('connectingScreen').style.display = 'flex';
+        
+        document.dispatchEvent(new CustomEvent('prejoinComplete', { detail: settings }));
+    }
+    
+    // Init preview on load
+    initPreview();
+    
+    // Определяем: создание или подключение
+    var params = new URLSearchParams(window.location.search);
+    var mode = params.get('mode');
+    var existingId = params.get('id');
+    if (mode === 'join' || (existingId && mode !== 'create')) {
+        document.getElementById('prejoinSubmitBtn').textContent = 'Подключиться';
+        var rnInput = document.getElementById('roomName');
+        var rdInput = document.getElementById('roomDesc');
+        if (rnInput) rnInput.style.display = 'none';
+        if (rdInput) rdInput.style.display = 'none';
+    }
+    </script>
+    </div><!-- end roomContent -->
 </body>
 </html>

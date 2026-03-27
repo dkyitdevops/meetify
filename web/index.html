@@ -188,9 +188,14 @@
             line-height: 1.1;
             margin-bottom: 20px;
             max-width: 700px;
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .hero h1 span {
-            color: var(--accent-purple);
+            background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .hero-subtitle {
             font-size: 18px;
@@ -591,7 +596,7 @@
                 return;
             }
             
-            window.location.href = '/room.html?id=' + encodeURIComponent(roomId) + (password ? '&pwd=' + encodeURIComponent(password) : '');
+            window.location.href = '/room.html?id=' + encodeURIComponent(roomId) + '&mode=join' + (password ? '&pwd=' + encodeURIComponent(password) : '');
         }
         
         // Close modal on overlay click

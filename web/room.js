@@ -1,22 +1,3 @@
-// ==================== DEBUG LOGGING ====================
-const DEBUG = true;
-function log(...args) {
-    if (DEBUG) console.log('[Meetify]', ...args);
-}
-function error(...args) {
-    console.error('[Meetify ERROR]', ...args);
-}
-function showError(message) {
-    const errorDiv = document.getElementById('errorDisplay');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-    }
-    error('Error shown to user:', message);
-}
-log('room.js loaded');
-// ==================== DEBUG LOGGING END ====================
-
 // Получаем ID комнаты из URL
 var urlParams = new URLSearchParams(window.location.search);
 var roomId = urlParams.get('id');
@@ -28,7 +9,6 @@ if (!roomId) {
 
 // Отображаем ID комнаты
 document.getElementById('roomIdDisplay').textContent = roomId;
-log('Room ID set:', roomId);
 
 // Загружаем данные комнаты из sessionStorage
 var roomDataStr = sessionStorage.getItem('room_' + roomId + '_data');
@@ -248,6 +228,7 @@ function toggleChat() {
 // ==================== УЧАСТНИКИ ====================
 
 var participants = [{ id: 'local', name: 'Вы' }];
+var gradients = ['gradient-1', 'gradient-2', 'gradient-3'];
 
 function updateParticipantsList() {
     var list = document.getElementById('participantsList');
@@ -255,12 +236,24 @@ function updateParticipantsList() {
     
     list.innerHTML = '';
     
-    participants.forEach(function(p) {
+    participants.forEach(function(p, i) {
         var li = document.createElement('li');
-        li.style.cssText = 'padding: 10px; background: rgba(102, 126, 234, 0.2); border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;';
-        li.innerHTML = '<span>🎥</span><span>' + (p.name || 'Участник') + '</span>' + (p.id === 'local' ? ' <small>(Вы)</small>' : '');
+        li.className = 'participant-item' + (p.id === 'local' ? ' you' : '');
+        var initials = (p.name || 'У').charAt(0).toUpperCase();
+        var gradClass = gradients[i % gradients.length];
+        var handIcon = p.handRaised ? ' <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>' : '';
+        li.innerHTML = '<div class="participant-avatar ' + gradClass + '">' + initials + '</div>' +
+            '<div class="participant-info">' +
+            '<div class="participant-name">' + (p.name || 'Участник') + (p.id === 'local' ? '<span class="you-tag"> — вы</span>' : '') + handIcon + '</div>' +
+            '<div class="participant-status">' + (p.id === 'local' ? 'Организатор' : 'Участник') + '</div>' +
+            '</div>' +
+            '<div class="participant-mic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>';
         list.appendChild(li);
     });
+    
+    // Update badge
+    var badge = document.getElementById('participantCount');
+    if (badge) badge.textContent = participants.length;
 }
 
 function addParticipant(userId, name) {
@@ -516,17 +509,18 @@ function sendReaction(emoji) {
     // Отправляем другим
     socket.emit('reaction', {
         roomId: roomId,
-        emoji: emoji
+        emoji: emoji,
+        from: window.localUserName || 'Участник'
     });
     
     // Закрываем панель
     toggleReactions();
 }
 
-function showReaction(emoji, isLocal) {
+function showReaction(emoji, isLocal, fromName) {
     var reaction = document.createElement('div');
     reaction.className = 'reaction-float';
-    reaction.textContent = emoji;
+    reaction.innerHTML = emoji + (fromName && !isLocal ? '<span class="reaction-name">' + fromName + '</span>' : '');
     
     // Случайная позиция по горизонтали
     var randomX = Math.random() * 60 + 20; // 20% - 80% ширины
@@ -547,7 +541,7 @@ function showReaction(emoji, isLocal) {
 
 // Socket events для реакций
 socket.on('reaction', function(data) {
-    showReaction(data.emoji, false);
+    showReaction(data.emoji, false, data.from);
 });
 
 var localStream = null;
@@ -575,150 +569,136 @@ var configuration = {
     ]
 };
 
-// Подключаемся при загрузке страницы
-window.onload = function() {
-    log('prejoinComplete listener added');
+// Слушаем событие завершения prejoin от room.html
+document.addEventListener('prejoinComplete', (event) => {
+    const { camera, microphone, name } = event.detail;
     
-    // Слушаем событие от prejoin
-    document.addEventListener('prejoinComplete', function(event) {
-        console.log('Received prejoinComplete');
-        log('prejoinComplete event received', event.detail);
-        connectToRoom(event.detail);
+    // Сохраняем имя пользователя
+    window.localUserName = name || 'Гость';
+    
+    console.log('[Meetify] prejoinComplete received, connecting...', { camera, microphone, name });
+    
+    // Теперь вызываем connectToRoom с настройками
+    connectToRoom({
+        camera: camera,
+        microphone: microphone
     });
-    
-    // Если prejoin не используется, подключаемся сразу
-    if (!window.prejoinSettings) {
-        connectToRoom();
-    }
-};
+});
 
-async function connectToRoom(settings) {
-    log('connectToRoom called with settings', settings);
+async function connectToRoom(settings = {}) {
+    const { camera = true, microphone = true } = settings;
+    
     try {
-        log('getUserMedia requested');
-        // Получаем доступ к камере и микрофону
-        localStream = await navigator.mediaDevices.getUserMedia({ 
-            video: true, 
-            audio: true 
-        });
-        log('getUserMedia success');
+        // Проверяем, есть ли уже поток из prejoin
+        if (window.prejoinSettings && window.prejoinSettings.stream) {
+            // Используем существующий поток
+            localStream = window.prejoinSettings.stream;
+            
+            // Применяем настройки камеры
+            const videoTracks = localStream.getVideoTracks();
+            videoTracks.forEach(track => {
+                track.enabled = camera;
+            });
+            isCamEnabled = camera;
+            
+            // Применяем настройки микрофона
+            const audioTracks = localStream.getAudioTracks();
+            audioTracks.forEach(track => {
+                track.enabled = microphone;
+            });
+            isMicEnabled = microphone;
+        } else {
+            // Запрашиваем доступ к камере и микрофону только если нужно
+            const constraints = {
+                video: camera,
+                audio: microphone
+            };
+            
+            localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            isCamEnabled = camera;
+            isMicEnabled = microphone;
+        }
         
         // Показываем локальное видео
         addVideoStream(localStream, 'local', true);
         
+        // Устанавливаем grid layout
+        if (typeof updateVideoGrid === 'function') updateVideoGrid();
+        
+        // Обновляем UI кнопок в соответствии с настройками
+        var micBtn = document.getElementById('micBtn');
+        var camBtn = document.getElementById('camBtn');
+        
+        if (micBtn) {
+            micBtn.classList.toggle('muted', !isMicEnabled);
+        }
+        
+        if (camBtn) {
+            camBtn.classList.toggle('muted', !isCamEnabled);
+        }
+        
         // Скрываем экран подключения
-        log('connectingScreen hidden');
         document.getElementById('connectingScreen').classList.add('hidden');
-        log('connectingScreen shown');
         
         // Подключаемся к комнате
         socket.emit('join-room', roomId);
+        
+        console.log('[Meetify] join-room emitted:', roomId);
         
         // Добавляем системное сообщение
         addChatMessage('Система', 'Вы присоединились к комнате', true);
         
     } catch (err) {
-        error('getUserMedia error', err);
-        error('Error accessing media devices:', err);
-        
+        console.error('Error accessing media devices:', err);
         // Скрываем экран подключения при ошибке
-        document.getElementById('connectingScreen').classList.add('hidden');
-        
-        // Показываем экран ошибки с вариантами действий
-        showMediaErrorScreen(err);
+        document.getElementById('connectingScreen').style.display = 'none';
+        alert('Ошибка доступа к камере/микрофону. Разрешите доступ и обновите страницу.');
     }
 }
 
-// Показываем экран ошибки доступа к медиаустройствам
-function showMediaErrorScreen(err) {
-    // Создаём контейнер для ошибки если его ещё нет
-    let errorScreen = document.getElementById('mediaErrorScreen');
-    if (!errorScreen) {
-        errorScreen = document.createElement('div');
-        errorScreen.id = 'mediaErrorScreen';
-        errorScreen.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1001; padding: 20px; text-align: center;';
-        document.body.appendChild(errorScreen);
-    }
-    
-    // Определяем тип ошибки
-    let errorMessage = 'Не удалось получить доступ к камере и микрофону';
-    let errorDetails = 'Проверьте настройки браузера и разрешите доступ к устройствам';
-    
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMessage = 'Доступ к камере и микрофону запрещён';
-        errorDetails = 'Вы отклонили запрос на доступ. Проверьте настройки браузера и разрешите доступ к устройствам.';
-    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        errorMessage = 'Камера или микрофон не найдены';
-        errorDetails = 'Убедитесь, что устройства подключены и работают корректно.';
-    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errorMessage = 'Устройства заняты другим приложением';
-        errorDetails = 'Закройте другие программы, использующие камеру или микрофон, и попробуйте снова.';
-    }
-    
-    errorScreen.innerHTML = `
-        <div style="font-size: 64px; margin-bottom: 20px;">📷❌</div>
-        <h2 style="color: #ef4444; margin-bottom: 10px;">${errorMessage}</h2>
-        <p style="color: #888; max-width: 400px; margin-bottom: 30px; line-height: 1.5;">${errorDetails}</p>
-        <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
-            <button onclick="retryMediaAccess()" style="padding: 15px 30px; background: #667eea; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
-                🔄 Повторить
-            </button>
-            <button onclick="joinWithoutMedia()" style="padding: 15px 30px; background: rgba(102, 126, 234, 0.2); color: #fff; border: 2px solid #667eea; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
-                🎧 Войти без камеры
-            </button>
-            <button onclick="leaveRoom()" style="padding: 15px 30px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold;">
-                🚪 Выйти
-            </button>
-        </div>
-    `;
-    errorScreen.style.display = 'flex';
-}
 
-// Скрываем экран ошибки
-function hideMediaErrorScreen() {
-    const errorScreen = document.getElementById('mediaErrorScreen');
-    if (errorScreen) {
-        errorScreen.style.display = 'none';
+// Dynamic video grid layout (Zoom-style)
+function updateVideoGrid() {
+    var container = document.getElementById('videos');
+    if (!container) return;
+    var children = container.children;
+    var count = children.length;
+    
+    // Reset styles
+    container.style.gridTemplateColumns = '';
+    container.style.gridTemplateRows = '';
+    
+    if (count <= 1) {
+        // 1 video: full screen
+        container.style.gridTemplateColumns = '1fr';
+    } else if (count === 2) {
+        // 2 videos: side by side
+        container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    } else if (count <= 4) {
+        // 3-4: 2x2
+        container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    } else if (count <= 6) {
+        // 5-6: 3x2
+        container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    } else if (count <= 9) {
+        // 7-9: 3x3
+        container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    } else {
+        // 10+: 4 columns
+        container.style.gridTemplateColumns = 'repeat(4, 1fr)';
     }
 }
 
-// Повторная попытка получить доступ к медиа
-async function retryMediaAccess() {
-    hideMediaErrorScreen();
-    document.getElementById('connectingScreen').classList.remove('hidden');
-    await connectToRoom();
-}
+// Override addVideoStream to update grid
+var _origAddVideoStream = typeof addVideoStream === 'function' ? addVideoStream : null;
 
-// Вход без камеры и микрофона (только чат)
-async function joinWithoutMedia() {
-    hideMediaErrorScreen();
-    log('Joining without media (audio/video)');
-    
-    // Устанавливаем флаги
-    isMicEnabled = false;
-    isCamEnabled = false;
-    
-    // Скрываем экран подключения
-    document.getElementById('connectingScreen').classList.add('hidden');
-    
-    // Подключаемся к комнате без медиа
-    socket.emit('join-room', roomId);
-    
-    // Показываем уведомление
-    addChatMessage('Система', 'Вы присоединились к комнате (без камеры и микрофона)', true);
-    
-    // Обновляем UI кнопок
-    var micBtn = document.getElementById('micBtn');
-    var camBtn = document.getElementById('camBtn');
-    if (micBtn) {
-        micBtn.textContent = '🎤❌';
-        micBtn.classList.add('muted');
-    }
-    if (camBtn) {
-        camBtn.textContent = '📹❌';
-        camBtn.classList.add('muted');
-    }
-}
+// Patch addVideoStream to call updateVideoGrid
+var _origAddVideoStream = addVideoStream;
+addVideoStream = function(stream, userId, isLocal) {
+    var result = _origAddVideoStream(stream, userId, isLocal);
+    setTimeout(updateVideoGrid, 50);
+    return result;
+};
 
 function addVideoStream(stream, userId, isLocal) {
     console.log('Adding video stream for user:', userId);
@@ -770,7 +750,6 @@ function toggleMic() {
     });
     
     var micBtn = document.getElementById('micBtn');
-    micBtn.textContent = isMicEnabled ? '🎤' : '🎤❌';
     micBtn.classList.toggle('muted', !isMicEnabled);
 }
 
@@ -787,7 +766,6 @@ function toggleCam() {
     });
     
     var camBtn = document.getElementById('camBtn');
-    camBtn.textContent = isCamEnabled ? '📹' : '📹❌';
     camBtn.classList.toggle('muted', !isCamEnabled);
 }
 
@@ -858,15 +836,33 @@ document.getElementById('chatInput').addEventListener('keypress', function(e) {
 });
 
 // Socket.io обработчики
+
+// Подтверждение подключения к комнате
+socket.on('joined-room', function(joinedRoomId) {
+    console.log('[Meetify] Successfully joined room:', joinedRoomId);
+});
+
 socket.on('user-joined', async function(userId) {
+    console.log('[Meetify] user-joined:', userId);
     console.log('User joined:', userId);
     addChatMessage('Система', 'Новый участник присоединился', true);
     
     // Добавляем в список участников
     addParticipant(userId, 'Участник ' + userId.substr(0, 6));
     
+    // Ждём локальный поток если ещё не готов
+    var waitStream = function(attempt) {
+        return new Promise(function(resolve) {
+            if (localStream) { resolve(); return; }
+            if (attempt > 20) { console.error('[Meetify] Timeout waiting for localStream'); resolve(); return; }
+            setTimeout(function() { waitStream(attempt + 1).then(resolve); }, 500);
+        });
+    };
+    
+    await waitStream(0);
+    
     if (!localStream) {
-        console.log('Local stream not ready yet');
+        console.log('Local stream not available');
         return;
     }
     
@@ -916,6 +912,17 @@ socket.on('user-joined', async function(userId) {
 });
 
 socket.on('offer', async function(data) {
+    if (!localStream) {
+        console.log('[Meetify] offer received but no localStream, waiting...');
+        var waitStream = function(attempt) {
+            return new Promise(function(resolve) {
+                if (localStream) { resolve(); return; }
+                if (attempt > 20) { resolve(); return; }
+                setTimeout(function() { waitStream(attempt + 1).then(resolve); }, 500);
+            });
+        };
+        await waitStream(0);
+    }
     if (!localStream) return;
     
     try {
@@ -978,6 +985,9 @@ socket.on('user-left', function(data) {
     if (wrapper) {
         wrapper.remove();
     }
+    
+    // Обновляем сетку
+    if (typeof updateVideoGrid === 'function') updateVideoGrid();
     
     // Закрываем соединение
     if (peerConnections[data.userId]) {
@@ -1382,31 +1392,44 @@ function toggleRaiseHand() {
     
     if (isHandRaised) {
         btn.classList.add('muted');
-        socket.emit('raise-hand', { roomId: roomId, userId: 'local' });
-        addChatMessage('Система', '✋ Вы подняли руку', true);
-        showHandRaisedIcon('local');
+        socket.emit('raise-hand', { roomId: roomId, userId: socket.id, name: window.localUserName || 'Участник' });
+        addChatMessage('Система', 'Вы подняли руку', true);
+        showHandRaisedIcon(socket.id);
+        // Update local participant hand status
+        var me = participants.find(function(p) { return p.id === 'local'; });
+        if (me) { me.handRaised = true; updateParticipantsList(); }
     } else {
         btn.classList.remove('muted');
-        socket.emit('lower-hand', { roomId: roomId, userId: 'local' });
-        addChatMessage('Система', '✋ Вы опустили руку', true);
-        hideHandRaisedIcon('local');
+        socket.emit('lower-hand', { roomId: roomId, userId: socket.id, name: window.localUserName || 'Участник' });
+        addChatMessage('Система', 'Вы опустили руку', true);
+        hideHandRaisedIcon(socket.id);
+        var me = participants.find(function(p) { return p.id === 'local'; });
+        if (me) { me.handRaised = false; updateParticipantsList(); }
     }
 }
 
 // Получение уведомлений о поднятых руках
 socket.on('hand-raised', function(data) {
-    addChatMessage('Система', '✋ ' + (data.name || 'Участник') + ' хочет выступить', true);
-    showNotification('Поднята рука', data.name + ' хочет выступить');
+    addChatMessage('Система', (data.name || 'Участник') + ' поднял(а) руку', true);
+    showNotification('Поднята рука', (data.name || 'Участник') + ' хочет выступить');
     
     // Показываем иконку на видео
-    showHandRaisedIcon(data.userId || 'local');
+    showHandRaisedIcon(data.userId);
+    
+    // Обновляем статус руки в списке участников
+    var p = participants.find(function(x) { return x.id === data.userId; });
+    if (p) { p.handRaised = true; updateParticipantsList(); }
 });
 
 socket.on('hand-lowered', function(data) {
-    addChatMessage('Система', '✋ ' + (data.name || 'Участник') + ' опустил руку', true);
+    addChatMessage('Система', (data.name || 'Участник') + ' опустил(а) руку', true);
     
     // Скрываем иконку
-    hideHandRaisedIcon(data.userId || 'local');
+    hideHandRaisedIcon(data.userId);
+    
+    // Обновляем статус руки в списке участников
+    var p = participants.find(function(x) { return x.id === data.userId; });
+    if (p) { p.handRaised = false; updateParticipantsList(); }
 });
 
 // Показать иконку поднятой руки
