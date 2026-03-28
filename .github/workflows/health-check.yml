@@ -41,7 +41,8 @@ jobs:
         fi
     
     - name: Notify on failure
-      if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+      if: failure()
+      continue-on-error: true
       uses: slackapi/slack-github-action@v1.27.0
       with:
         payload: |
