@@ -18,7 +18,12 @@ jobs:
     
     - name: Check WebSocket
       run: |
-        curl -sf -I https://46-149-68-9.nip.io/socket.io/ || exit 1
+        STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "https://46-149-68-9.nip.io/socket.io/?EIO=4&transport=polling")
+        if [ "$STATUS" != "200" ]; then
+          echo "Socket.io returned HTTP $STATUS"
+          exit 1
+        fi
+        echo "Socket.io is responding (HTTP $STATUS)"
       timeout-minutes: 1
     
     - name: Check SSL certificate
@@ -36,12 +41,12 @@ jobs:
         fi
     
     - name: Notify on failure
-      if: failure()
-      uses: slackapi/slack-github-action@v1.24.0
+      if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+      uses: slackapi/slack-github-action@v1.27.0
       with:
         payload: |
           {
-            "text": "🚨 Meetify health check failed!\n<https://46-149-68-9.nip.io|Check site>"
+            "text": "Meetify health check failed!\n<https://46-149-68-9.nip.io|Check site>"
           }
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
