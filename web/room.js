@@ -1347,41 +1347,169 @@ document.getElementById('customBgFile').addEventListener('change', function(e) {
 });
 
 // Применение виртуального фона
-function applyVirtualBackground(type) {
+// ==================== AI-СЕГМЕНТАЦИЯ ФОНА ====================
+
+var selfieSegmentation = null;
+var segmentationActive = false;
+var segAnimationId = null;
+var segCanvas = null;
+var segCtx = null;
+
+// Predefined background images
+var backgroundPresets = {
+    office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1280&h=720&fit=crop',
+    nature: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1280&h=720&fit=crop',
+    space: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1280&h=720&fit=crop',
+    books: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1280&h=720&fit=crop'
+};
+
+// Load background presets
+function loadBackgroundPreset(url) {
+    return new Promise((resolve, reject) => {
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+    });
+}
+
+// Initialize MediaPipe Selfie Segmentation
+async function initSegmentation() {
+    if (selfieSegmentation || typeof SelfieSegmentation === 'undefined') return;
+    
+    try {
+        selfieSegmentation = new SelfieSegmentation({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465748/${file}`;
+            }
+        });
+        
+        selfieSegmentation.setOptions({
+            modelSelection: 1,
+            selfieMode: false
+        });
+        
+        console.log('[Meetify] MediaPipe initialized');
+    } catch (e) {
+        console.error('[Meetify] MediaPipe init failed:', e);
+    }
+}
+
+// Применение виртуального фона с AI-сегментацией
+async function applyVirtualBackground(type) {
     if (!localStream) {
         alert('Сначала включите камеру');
         return;
     }
     
-    // Останавливаем предыдущую обработку
-    if (segmentationInterval) {
-        clearInterval(segmentationInterval);
-        segmentationInterval = null;
+    // Stop previous processing
+    if (segAnimationId) {
+        cancelAnimationFrame(segAnimationId);
+        segAnimationId = null;
     }
+    segmentationActive = false;
+    
+    var localVideo = document.getElementById('video-local');
+    if (!localVideo) return;
+    
+    // Remove CSS filters
+    localVideo.style.filter = 'none';
     
     if (type === 'none') {
-        // Возвращаем оригинальный поток
-        var localVideo = document.getElementById('video-local');
-        if (localVideo) {
-            localVideo.srcObject = localStream;
-        }
+        // Return to original stream
+        localVideo.srcObject = localStream;
+        if (segCanvas) segCanvas.style.display = 'none';
+        localVideo.style.display = 'block';
         addChatMessage('Система', 'Виртуальный фон отключён', true);
         return;
     }
     
-    // Для простоты пока только CSS-эффекты
-    var localVideo = document.getElementById('video-local');
-    if (!localVideo) return;
-    
-    if (type === 'blur') {
-        // Применяем CSS blur
-        localVideo.style.filter = 'blur(8px)';
-        addChatMessage('Система', 'Размытие фона включено', true);
-    } else {
-        // Для других фонов пока просто сообщение
-        localVideo.style.filter = 'none';
-        addChatMessage('Система', 'Фон \"' + type + '\" выбран (в разработке)', true);
+    // Initialize MediaPipe
+    await initSegmentation();
+    if (!selfieSegmentation) {
+        addChatMessage('Система', 'Ошибка: MediaPipe не загружен', true);
+        return;
     }
+    
+    // Create output canvas
+    if (!segCanvas) {
+        segCanvas = document.createElement('canvas');
+        segCanvas.id = 'segmentationCanvas';
+        segCanvas.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:12px;';
+        localVideo.parentNode.insertBefore(segCanvas, localVideo.nextSibling);
+    }
+    
+    segCanvas.style.display = 'block';
+    localVideo.style.display = 'none';
+    segCtx = segCanvas.getContext('2d');
+    
+    // Load background image
+    var bgImg = null;
+    if (type === 'custom' && backgroundImage) {
+        bgImg = backgroundImage;
+    } else if (backgroundPresets[type]) {
+        try {
+            bgImg = await loadBackgroundPreset(backgroundPresets[type]);
+        } catch (e) {
+            console.error('[Meetify] Failed to load background:', e);
+        }
+    }
+    
+    // Setup MediaPipe results handler
+    selfieSegmentation.onResults(function(results) {
+        if (!segCanvas || !segCtx) return;
+        
+        var w = segCanvas.width = localVideo.videoWidth || 640;
+        var h = segCanvas.height = localVideo.videoHeight || 480;
+        
+        segCtx.clearRect(0, 0, w, h);
+        
+        var mask = results.segmentationMask;
+        
+        if (type === 'blur') {
+            // Draw blurred background
+            segCtx.filter = 'blur(20px)';
+            segCtx.drawImage(results.image, 0, 0, w, h);
+            segCtx.filter = 'none';
+            
+            // Composite sharp person on top using mask
+            segCtx.globalCompositeOperation = 'destination-in';
+            segCtx.drawImage(mask, 0, 0, w, h);
+            segCtx.globalCompositeOperation = 'source-over';
+            
+            segCtx.drawImage(results.image, 0, 0, w, h);
+        } else if (bgImg) {
+            // Draw background image
+            segCtx.drawImage(bgImg, 0, 0, w, h);
+            
+            // Cut out person shape from background
+            segCtx.globalCompositeOperation = 'destination-out';
+            segCtx.drawImage(mask, 0, 0, w, h);
+            segCtx.globalCompositeOperation = 'source-over';
+            
+            // Draw person on top
+            segCtx.drawImage(results.image, 0, 0, w, h);
+        } else {
+            // Fallback: just show video
+            segCtx.drawImage(results.image, 0, 0, w, h);
+        }
+    });
+    
+    // Start processing loop
+    segmentationActive = true;
+    async function processFrame() {
+        if (!segmentationActive || !selfieSegmentation) return;
+        
+        if (localVideo.readyState >= 2) {
+            await selfieSegmentation.send({ image: localVideo });
+        }
+        
+        segAnimationId = requestAnimationFrame(processFrame);
+    }
+    processFrame();
+    
+    addChatMessage('Система', 'Виртуальный фон "' + type + '" включён', true);
 }
 
 // ==================== ПОДНЯТИЕ РУКИ ====================
